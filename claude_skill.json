@@ -1,0 +1,23 @@
+{
+  "name": "ipaShip",
+  "version": "1.3.0",
+  "type": "claude-skill",
+  "description": "AI-powered App Store review audit for Flutter projects. Catch rejections before you submit.",
+  "author": "async-atharv",
+  "mcpServer": {
+    "command": "ipaShip-mcp",
+    "description": "MCP compliance auditing tools"
+  },
+  "skillConfig": {
+    "recommendedModels": [
+      "claude-3-haiku",
+      "claude-3-sonnet",
+      "claude-3-opus"
+    ],
+    "envRequirements": [
+      "ANTHROPIC_API_KEY",
+      "IPASHIP_PROVIDER",
+      "IPASHIP_MODEL"
+    ]
+  }
+}

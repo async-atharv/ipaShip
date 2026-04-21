@@ -1,0 +1,9 @@
+.env
+.ipaShip
+.git
+.github
+.claude
+node_modules
+*.test.js
+tests/
+.DS_Store

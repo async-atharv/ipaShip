@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+# Execute the node package via npx
+system("npx", "--yes", "@async-atharv/ipaship", *ARGV)
+exit $?.exitstatus || 1

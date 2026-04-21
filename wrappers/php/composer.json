@@ -1,0 +1,13 @@
+{
+    "name": "async-atharv/ipaship",
+    "description": "AI-powered App Store review audit CLI.",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "async-atharv"
+        }
+    ],
+    "bin": [
+        "bin/ipaship"
+    ]
+}

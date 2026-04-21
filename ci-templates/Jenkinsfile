@@ -1,0 +1,80 @@
+// ──────────────────────────────────────────────────────────────
+//  ipaShip — Jenkins Pipeline (Declarative)
+//  Copy to your Jenkinsfile
+// ──────────────────────────────────────────────────────────────
+
+pipeline {
+    agent {
+        docker {
+            image 'node:20-alpine'
+        }
+    }
+
+    environment {
+        GEMINI_API_KEY = credentials('gemini-api-key')
+        // Or for Claude:
+        // ANTHROPIC_API_KEY = credentials('anthropic-api-key')
+    }
+
+    options {
+        timeout(time: 15, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+
+    stages {
+        stage('Install ipaShip') {
+            steps {
+                sh 'npm install -g @async-atharv/ipaship'
+                sh 'ipaShip --version'
+            }
+        }
+
+        stage('Audit') {
+            parallel {
+                stage('iOS Store Audit') {
+                    steps {
+                        sh '''
+                            ipaShip --dir ./ \
+                                --platform ios \
+                                --mode store \
+                                --provider gemini \
+                                --key $GEMINI_API_KEY
+                        '''
+                    }
+                }
+
+                stage('Android Store Audit') {
+                    steps {
+                        sh '''
+                            ipaShip --dir ./ \
+                                --platform android \
+                                --mode store \
+                                --provider gemini \
+                                --key $GEMINI_API_KEY
+                        '''
+                    }
+                }
+
+                stage('Code Quality') {
+                    steps {
+                        sh '''
+                            ipaShip --dir ./ \
+                                --mode code \
+                                --provider gemini \
+                                --key $GEMINI_API_KEY
+                        '''
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        failure {
+            echo 'ipaShip audit failed — review compliance issues before deploying.'
+        }
+        success {
+            echo 'ipaShip audit passed — ready for store submission.'
+        }
+    }
+}

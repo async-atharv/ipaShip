@@ -1,0 +1,71 @@
+# ──────────────────────────────────────────────────────────────
+#  ipaShip — CircleCI Config
+#  Copy to .circleci/config.yml
+# ──────────────────────────────────────────────────────────────
+
+version: 2.1
+
+executors:
+  node:
+    docker:
+      - image: cimg/node:20.0
+    working_directory: ~/project
+
+commands:
+  install-ipaship:
+    steps:
+      - run:
+          name: Install ipaShip
+          command: npm install -g @async-atharv/ipaship
+
+  run-audit:
+    parameters:
+      platform:
+        type: string
+        default: "both"
+      mode:
+        type: string
+        default: "both"
+    steps:
+      - run:
+          name: Run ipaShip (<< parameters.platform >> / << parameters.mode >>)
+          command: |
+            ipaShip --dir ./ \
+              --platform << parameters.platform >> \
+              --mode << parameters.mode >> \
+              --provider gemini \
+              --key $GEMINI_API_KEY
+
+jobs:
+  ios-audit:
+    executor: node
+    steps:
+      - checkout
+      - install-ipaship
+      - run-audit:
+          platform: ios
+          mode: store
+
+  android-audit:
+    executor: node
+    steps:
+      - checkout
+      - install-ipaship
+      - run-audit:
+          platform: android
+          mode: store
+
+  code-review:
+    executor: node
+    steps:
+      - checkout
+      - install-ipaship
+      - run-audit:
+          mode: code
+
+workflows:
+  audit:
+    jobs:
+      - ios-audit
+      - android-audit
+      - code-review

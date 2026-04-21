@@ -1,0 +1,15 @@
+# ──────────────────────────────────────────────────────────────
+#  ipaShip — Docker Compose (for local dev / CI)
+#  Usage: docker compose run audit
+# ──────────────────────────────────────────────────────────────
+
+services:
+  audit:
+    build: .
+    volumes:
+      - .:/app:ro
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      # Or for Claude:
+      # - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    command: ["--dir", "/app", "--platform", "both", "--mode", "both", "--provider", "gemini", "--key", "${GEMINI_API_KEY}"]

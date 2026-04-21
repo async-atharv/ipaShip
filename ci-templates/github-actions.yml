@@ -1,0 +1,52 @@
+# ──────────────────────────────────────────────────────────────
+#  ipaShip — GitHub Actions Workflow
+#  Copy this file to .github/workflows/ipaship-audit.yml
+# ──────────────────────────────────────────────────────────────
+name: ipaShip Store Audit
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs on the same branch
+concurrency:
+  group: ipaship-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: App Store Compliance
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      matrix:
+        platform: [ios, android]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run ipaShip Audit
+        run: |
+          npx --yes @async-atharv/ipaship \
+            --dir ./ \
+            --platform ${{ matrix.platform }} \
+            --mode both \
+            --provider gemini \
+            --key ${{ secrets.GEMINI_API_KEY }}
+
+      # Optional: Upload audit results as artifact
+      # - name: Upload Report
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: ipaship-report-${{ matrix.platform }}
+      #     path: ipaship-report-*.json

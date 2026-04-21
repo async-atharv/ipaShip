@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>ipaship</ToolCommandName>
+    <PackageId>ipaship</PackageId>
+    <Version>1.3.0</Version>
+    <Authors>async-atharv</Authors>
+    <Description>AI-powered App Store review audit CLI for Flutter projects.</Description>
+    <PackageProjectUrl>https://github.com/async-atharv/ipaShip</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/async-atharv/ipaShip</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>flutter;ios;android;audit;cli;app-store</PackageTags>
+  </PropertyGroup>
+</Project>

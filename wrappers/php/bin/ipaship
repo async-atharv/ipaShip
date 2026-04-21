@@ -1,0 +1,6 @@
+#!/usr/bin/env php
+<?php
+$args = array_slice($argv, 1);
+$cmd = "npx --yes @async-atharv/ipaship " . implode(" ", array_map('escapeshellarg', $args));
+passthru($cmd, $status);
+exit($status);

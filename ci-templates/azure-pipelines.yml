@@ -1,0 +1,81 @@
+# ──────────────────────────────────────────────────────────────
+#  ipaShip — Azure DevOps Pipeline
+#  Copy to azure-pipelines.yml
+# ──────────────────────────────────────────────────────────────
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  nodeVersion: '20.x'
+
+stages:
+  - stage: Audit
+    displayName: 'ipaShip Compliance Audit'
+    jobs:
+      - job: iOS
+        displayName: 'iOS Store Audit'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+            displayName: 'Install Node.js'
+
+          - script: npm install -g @async-atharv/ipaship
+            displayName: 'Install ipaShip'
+
+          - script: |
+              ipaShip --dir ./ \
+                --platform ios \
+                --mode both \
+                --provider gemini \
+                --key $(GEMINI_API_KEY)
+            displayName: 'Run iOS Store Audit'
+
+      - job: Android
+        displayName: 'Android Play Store Audit'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+            displayName: 'Install Node.js'
+
+          - script: npm install -g @async-atharv/ipaship
+            displayName: 'Install ipaShip'
+
+          - script: |
+              ipaShip --dir ./ \
+                --platform android \
+                --mode both \
+                --provider gemini \
+                --key $(GEMINI_API_KEY)
+            displayName: 'Run Android Store Audit'
+
+      - job: Code
+        displayName: 'Code Quality Review'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+            displayName: 'Install Node.js'
+
+          - script: npm install -g @async-atharv/ipaship
+            displayName: 'Install ipaShip'
+
+          - script: |
+              ipaShip --dir ./ \
+                --mode code \
+                --provider gemini \
+                --key $(GEMINI_API_KEY)
+            displayName: 'Run Code Quality Audit'

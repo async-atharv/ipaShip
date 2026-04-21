@@ -1,0 +1,34 @@
+# ──────────────────────────────────────────────────────────────
+#  ipaShip — Bitbucket Pipelines
+#  Add this to bitbucket-pipelines.yml
+# ──────────────────────────────────────────────────────────────
+
+image: node:20
+
+pipelines:
+  default:
+    - step:
+        name: ipaShip iOS Audit
+        caches:
+          - node
+        script:
+          - npm install -g @async-atharv/ipaship
+          - ipaShip --dir ./ --platform ios --mode both --provider gemini --key $GEMINI_API_KEY
+
+    - step:
+        name: ipaShip Android Audit
+        caches:
+          - node
+        script:
+          - npm install -g @async-atharv/ipaship
+          - ipaShip --dir ./ --platform android --mode both --provider gemini --key $GEMINI_API_KEY
+
+  pull-requests:
+    '**':
+      - step:
+          name: ipaShip Full Audit
+          caches:
+            - node
+          script:
+            - npm install -g @async-atharv/ipaship
+            - ipaShip --dir ./ --platform both --mode both --provider gemini --key $GEMINI_API_KEY

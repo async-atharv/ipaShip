@@ -1,0 +1,93 @@
+# ipaShip
+
+> https://async-atharv.github.io/ipaShip/
+
+## What is ipaShip?
+
+ipaShip is an open-source CLI tool that audits Flutter mobile app source code against Apple App Store and Google Play Store guidelines using AI. It catches compliance issues, missing permissions, and policy violations before you submit your app for review, preventing costly rejections.
+
+## Who is ipaShip for?
+
+ipaShip is for Flutter developers, mobile DevOps engineers, and iOS/Android teams who want to automate pre-submission compliance checks. It integrates into CI/CD pipelines (GitHub Actions, GitLab CI, Jenkins, etc.) and works with AI coding assistants via MCP.
+
+## How to install ipaShip
+
+```
+npm install -g @async-atharv/ipaship
+```
+
+Requires Node.js 18+. Also available via pip, cargo, dart pub, go, gem, brew, dotnet, and Docker.
+
+## How to use ipaShip
+
+```
+ipaShip init           # one-time setup: pick AI provider + API key
+ipaShip --dir ./       # audit your Flutter project
+```
+
+## What does ipaShip check?
+
+### iOS App Store
+- Privacy & permissions (undeclared APIs, missing usage descriptions)
+- Data collection & tracking transparency (ATT dialog)
+- In-app purchase compliance (StoreKit)
+- Legal & export compliance (privacy policy)
+- Prohibited behaviors (dynamic code loading)
+
+### Google Play Store
+- Permissions & data safety declarations
+- Privacy policy & user data handling
+- Content & behavior policies
+- Billing & monetization compliance
+- Target API level requirements
+- Security & abuse prevention
+
+### Code Quality
+- Hardcoded credentials & insecure connections
+- Architecture patterns & state management
+- Error handling & crash prevention
+- Performance (memory leaks, unnecessary rebuilds)
+- Dependency hygiene & version constraints
+
+## Key features
+
+- Dual Store Support: Apple App Store + Google Play in one command
+- AI-Powered: Choose Google Gemini or Anthropic Claude
+- Up-to-Date Policies: Ships with latest store guidelines
+- Zero Setup: Auto-detects project type and platform
+- CI-Ready: Exit code 1 on failure, 0 on pass
+- MCP Server: Works inside Claude Code, Cursor, Windsurf
+- Docker: Run without installing Node.js
+
+## CLI options
+
+| Flag              | Description                     | Default       |
+|-------------------|---------------------------------|---------------|
+| --dir <path>      | Flutter project root            | required      |
+| --provider <name> | gemini or claude                | gemini        |
+| --platform <p>    | ios, android, or both           | auto-detected |
+| --mode <mode>     | store, code, or both            | both          |
+| --key <key>       | API key                         | env var       |
+
+## Environment variables
+
+| Variable           | Description          |
+|--------------------|----------------------|
+| GEMINI_API_KEY     | Gemini API key       |
+| ANTHROPIC_API_KEY  | Claude API key       |
+| IPASHIP_PROVIDER   | Provider override    |
+
+## CI/CD usage
+
+```
+npx --yes @async-atharv/ipaship --dir ./ --provider gemini --key $GEMINI_API_KEY
+```
+
+Ready-made templates available for GitHub Actions, GitLab CI, Jenkins, CircleCI, Bitbucket Pipelines, and Azure DevOps.
+
+## Links
+
+- Website: https://async-atharv.github.io/ipaShip/
+- npm: https://www.npmjs.com/package/@async-atharv/ipaship
+- GitHub: https://github.com/async-atharv/ipaShip
+- License: MIT

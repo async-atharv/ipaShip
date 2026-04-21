@@ -1,0 +1,271 @@
+#!/usr/bin/env node
+// ─────────────────────────────────────────────────────────────────────────────
+//  ipaShip — AI-powered App Store compliance audit for Flutter
+//  Copyright (c) 2026 async-atharv. PolyForm Noncommercial License 1.0.0
+//  Source: https://github.com/async-atharv/ipaShip
+//  PROVENANCE_FINGERPRINT: ipaSh1p:src:index:a7f3e1c9b2d4
+// ─────────────────────────────────────────────────────────────────────────────
+
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { Command } from 'commander';
+import ora from 'ora';
+import chalk from 'chalk';
+import { loadConfig } from './config.js';
+import { runInit, runConfig } from './init.js';
+import { scan } from './scanner.js';
+import { read as readPlist } from './plist-reader.js';
+import { read as readManifest } from './manifest-reader.js';
+import { read as readPubspec } from './pubspec-reader.js';
+import { audit } from './auditor.js';
+import { fetchGuidelines } from './guidelines.js';
+import { print as printReport } from './reporter.js';
+import { PROVIDER_DEFAULTS as DEFAULTS, detectPlatform } from './defaults.js';
+import { trackEvent } from './telemetry.js';
+import { collectTrainingData } from './collector-loader.js';
+import { verifyIntegrity, ORIGIN_AUTHOR, ORIGIN_PRODUCT, ORIGIN_LICENSE, pingCanaryBeacon, injectProvenanceIntoResult } from './provenance.js';
+
+// Read package version
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(await readFile(join(__dirname, '..', 'package.json'), 'utf-8'));
+
+// ── Provenance Integrity Check ──
+// Verify that this distribution has not been rebranded or tampered with.
+const _integrity = verifyIntegrity();
+if (!_integrity.valid) {
+  console.error(chalk.red('\n  ⚠ ipaShip Integrity Warning'));
+  console.error(chalk.red(`  ${_integrity.reason}`));
+  console.error(chalk.dim(`  Original: ${ORIGIN_PRODUCT} by ${ORIGIN_AUTHOR}`));
+  console.error(chalk.dim(`  License: ${ORIGIN_LICENSE}\n`));
+}
+
+const program = new Command();
+
+program
+  .name('ipaShip')
+  .description('AI-powered store review audit for Flutter projects')
+  .version(pkg.version);
+
+// Init subcommand
+program
+  .command('init')
+  .description('Create a .ipaShip config file in the current directory')
+  .action(async () => {
+    await runInit();
+    process.exit(0);
+  });
+
+// Config subcommand
+program
+  .command('config')
+  .description('Update provider, model, or API key in .ipaShip')
+  .action(async () => {
+    await runConfig();
+    process.exit(0);
+  });
+
+// Default audit command (runs when no subcommand is given)
+program
+  .command('audit', { isDefault: true })
+  .description('Run the audit (default command)')
+  .requiredOption('--dir <path>', 'Path to Flutter project root')
+  .option('--key <apiKey>', 'API key (or set in .ipaShip / env var)')
+  .option('--provider <provider>', 'AI provider: gemini or claude')
+  .option('--model <model>', 'Model to use (defaults per provider)')
+  .option('--type <type>', 'Project type: app or package (auto-detected if omitted)')
+  .option('--mode <mode>', 'Audit mode: store, code, or both', 'both')
+  .option('--platform <platform>', 'Target: ios, android, or both (auto-detected if omitted)')
+  .action(async (opts) => {
+    const projectDir = resolve(opts.dir);
+
+    // Validate directory
+    if (!existsSync(projectDir)) {
+      console.error(chalk.red(`Error: Directory not found: ${projectDir}`));
+      process.exit(1);
+    }
+
+    if (!existsSync(join(projectDir, 'lib'))) {
+      console.error(chalk.red(`Error: No lib/ directory found in ${projectDir}. Is this a Flutter project?`));
+      process.exit(1);
+    }
+
+    // Load .ipaShip config (project-level > home-level)
+    const config = await loadConfig(projectDir);
+
+    // Resolve values: CLI flag > .ipaShip > env var > default
+    const provider = (opts.provider || config.provider || 'gemini').toLowerCase();
+
+    if (!DEFAULTS[provider]) {
+      console.error(chalk.red(`Error: Unknown provider "${provider}". Use "gemini" or "claude".`));
+      process.exit(1);
+    }
+
+    if (opts.type && !['app', 'package'].includes(opts.type)) {
+      console.error(chalk.red(`Error: --type must be "app" or "package", got "${opts.type}".`));
+      process.exit(1);
+    }
+
+    const mode = (opts.mode || config.mode || 'both').toLowerCase();
+    if (!['store', 'code', 'both'].includes(mode)) {
+      console.error(chalk.red(`Error: --mode must be "store", "code", or "both", got "${mode}".`));
+      process.exit(1);
+    }
+
+    const platform = (opts.platform || config.platform || detectPlatform(projectDir)).toLowerCase();
+    if (!['ios', 'android', 'both'].includes(platform)) {
+      console.error(chalk.red(`Error: --platform must be "ios", "android", or "both", got "${platform}".`));
+      process.exit(1);
+    }
+
+    const apiKey = opts.key || config.key || process.env[DEFAULTS[provider].envKey];
+    const model = opts.model || config.model || DEFAULTS[provider].model;
+
+    if (!apiKey) {
+      console.error(chalk.red('Error: No API key provided.'));
+      console.error(chalk.dim('  Run ') + chalk.cyan('ipaShip init') + chalk.dim(' to create a .ipaShip config file,'));
+      console.error(chalk.dim(`  or pass --key YOUR_KEY, or set ${DEFAULTS[provider].envKey} in your environment.`));
+      process.exit(1);
+    }
+
+    const platformLabel = { ios: 'iOS', android: 'Android', both: 'iOS + Android' }[platform];
+    let spinner = ora({ text: `Scanning Flutter project (${platformLabel})...`, color: 'cyan' }).start();
+    const startTime = Date.now();
+
+    try {
+      // 1. Read pubspec.yaml first (needed for type detection)
+      spinner.text = 'Reading pubspec.yaml...';
+      const pubspec = await readPubspec(projectDir);
+
+      // 2. Resolve project type: CLI flag > config > auto-detect from pubspec
+      const projectType = opts.type || config.type || pubspec.projectType;
+      spinner.text = `Detected: ${chalk.cyan(projectType)} / ${chalk.cyan(platformLabel)}`;
+
+      // 3. Scan Dart files
+      spinner.text = 'Scanning Dart files...';
+      const { files, stats } = await scan(projectDir);
+      spinner.text = `Scanned ${stats.totalFiles} files (${stats.totalLines} lines → ${stats.skeletonLines} skeleton lines)`;
+
+      // 4. Scan example/ app for packages (if it exists)
+      let exampleFiles = [];
+      if (projectType === 'package' && existsSync(join(projectDir, 'example', 'lib'))) {
+        spinner.text = 'Scanning example/ app...';
+        const exampleResult = await scan(join(projectDir, 'example'));
+        exampleFiles = exampleResult.files;
+      }
+
+      // 5. Read platform-specific permission files
+      let plistData = { found: false, permissions: {}, bundleId: null };
+      let manifestData = { found: false, permissions: [], packageName: null };
+
+      if (projectType === 'app' && (platform === 'ios' || platform === 'both')) {
+        spinner.text = 'Reading Info.plist...';
+        plistData = await readPlist(projectDir);
+      }
+
+      if (projectType === 'app' && (platform === 'android' || platform === 'both')) {
+        spinner.text = 'Reading AndroidManifest.xml...';
+        manifestData = await readManifest(projectDir);
+      }
+
+      // 6. Load store guidelines (for store and both modes)
+      let appleGuidelines = null;
+      let googleGuidelines = null;
+
+      if (mode !== 'code') {
+        if (platform === 'ios' || platform === 'both') {
+          spinner.text = 'Loading App Store guidelines...';
+          appleGuidelines = await fetchGuidelines('apple');
+          if (appleGuidelines.warning) {
+            spinner.warn(chalk.yellow(appleGuidelines.warning));
+            spinner = ora({ text: '', color: 'cyan' }).start();
+          }
+        }
+
+        if (platform === 'android' || platform === 'both') {
+          spinner.text = 'Loading Play Store guidelines...';
+          googleGuidelines = await fetchGuidelines('google');
+          if (googleGuidelines.warning) {
+            spinner.warn(chalk.yellow(googleGuidelines.warning));
+            spinner = ora({ text: '', color: 'cyan' }).start();
+          }
+        }
+      }
+
+      // 7. Run AI audit
+      const modeLabel = { store: 'store compliance', code: 'code quality', both: 'full' }[mode];
+      spinner.text = `Running ${modeLabel} audit with ${provider}/${model}...`;
+      const result = await audit(
+        {
+          files,
+          exampleFiles,
+          permissions: plistData.permissions,
+          androidPermissions: manifestData.permissions,
+          pubspec,
+          plistFound: (platform === 'ios' || platform === 'both') ? plistData.found : undefined,
+          androidManifestFound: (platform === 'android' || platform === 'both') ? manifestData.found : undefined,
+          projectType,
+          appleGuidelines,
+          googleGuidelines,
+        },
+        { apiKey, model, provider, mode, platform },
+      );
+
+      spinner.stop();
+
+      // 7.5 Inject provenance into audit results & ping canary
+      injectProvenanceIntoResult(result);
+      pingCanaryBeacon('audit_run', { mode, platform, provider, score: result.score });
+
+      // 8. Print report
+      printReport(result, {
+        projectType,
+        projectName: pubspec.name,
+        provider,
+        model,
+        mode,
+        platform,
+      });
+
+      // 9. Track and exit
+      trackEvent('audit_completed', {
+        source: 'cli', mode, platform, provider, model,
+        project_type: projectType, score: result.score,
+        duration_ms: Date.now() - startTime,
+        tokens_input: result._tokens?.actual?.input ?? null,
+        tokens_output: result._tokens?.actual?.output ?? null,
+      });
+
+      // 9.5 Collect training data (private, fire-and-forget)
+      collectTrainingData({
+        evidence: {
+          files,
+          exampleFiles,
+          permissions: plistData.permissions,
+          androidPermissions: manifestData.permissions,
+          pubspec,
+          plistFound: (platform === 'ios' || platform === 'both') ? plistData.found : undefined,
+          androidManifestFound: (platform === 'android' || platform === 'both') ? manifestData.found : undefined,
+          projectType,
+        },
+        result,
+        config: { provider, model, mode, platform, projectType },
+        durationMs: Date.now() - startTime,
+        source: 'cli',
+      });
+
+      process.exitCode = result.score === 'FAIL' ? 1 : 0;
+    } catch (err) {
+      spinner.fail(chalk.red(err.message));
+      trackEvent('audit_error', {
+        source: 'cli', mode, platform, provider, model,
+        duration_ms: Date.now() - startTime,
+        error_message: err.message.slice(0, 200),
+      });
+      process.exitCode = 1;
+    }
+  });
+
+program.parse();

@@ -1,0 +1,5 @@
+node_modules/
+_private/
+.env
+.ipaShip
+.DS_Store

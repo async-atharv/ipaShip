@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ipaShip — Audit Your Flutter App</title>
+  <meta name="description" content="Run ipaShip audits directly in your browser. Upload your Flutter project, bring your own API key, and get instant App Store compliance results.">
+  <link rel="canonical" href="https://async-atharv.github.io/ipaShip/app.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #000000;
+      --bg-elevated: #0a0a0a;
+      --bg-card: #111111;
+      --bg-input: #1a1a1a;
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.16);
+      --text-primary: #f5f5f7;
+      --text-secondary: #86868b;
+      --text-tertiary: #6e6e73;
+      --accent: #f5f5f7;
+      --accent-blue: #2997ff;
+      --green: #30d158;
+      --yellow: #ffd60a;
+      --red: #ff453a;
+      --orange: #ff9f0a;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+      --mono: 'SF Mono', SFMono-Regular, ui-monospace, 'Cascadia Code', Menlo, monospace;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+
+    ::selection { background: rgba(41,151,255,0.3); }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 0.5px solid var(--border);
+    }
+    .nav-inner {
+      max-width: 980px; margin: 0 auto; padding: 0 22px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 48px;
+    }
+    .nav-logo {
+      font-size: 1.05rem; font-weight: 600; color: var(--text-primary);
+      letter-spacing: -0.02em; text-decoration: none;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .nav-logo span { opacity: 0.5; font-weight: 400; }
+    .nav-links { display: flex; gap: 28px; align-items: center; }
+    .nav-links a {
+      color: var(--text-secondary); font-size: 0.8rem; font-weight: 400;
+      text-decoration: none; transition: color 0.2s var(--ease);
+      letter-spacing: 0.01em;
+    }
+    .nav-links a:hover { color: var(--text-primary); }
+    .nav-links a.active { color: var(--text-primary); }
+
+    /* ── Layout ── */
+    .container { max-width: 680px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 120px 0 48px; text-align: center;
+    }
+    .hero-overline {
+      font-size: 1.05rem; font-weight: 600; color: var(--accent-blue);
+      letter-spacing: -0.01em; margin-bottom: 8px;
+    }
+    .hero h1 {
+      font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 700;
+      letter-spacing: -0.04em; line-height: 1.1;
+      background: linear-gradient(180deg, #f5f5f7 0%, #86868b 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      margin-top: 16px; font-size: 1.1rem; color: var(--text-secondary);
+      max-width: 480px; margin-left: auto; margin-right: auto;
+      font-weight: 400; line-height: 1.6; letter-spacing: -0.01em;
+    }
+
+    /* ── Section ── */
+    .section { padding: 24px 0; }
+    .section-label {
+      font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-tertiary);
+      margin-bottom: 10px;
+    }
+
+    /* ── Config Grid ── */
+    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .config-grid.full { grid-template-columns: 1fr; }
+
+    .field label {
+      display: block; font-size: 0.75rem; font-weight: 500;
+      color: var(--text-secondary); margin-bottom: 6px;
+      letter-spacing: 0.01em;
+    }
+    .field select,
+    .field input {
+      width: 100%; padding: 11px 14px;
+      background: var(--bg-input); color: var(--text-primary);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      font-family: var(--font); font-size: 0.9rem;
+      outline: none; transition: border-color 0.2s var(--ease);
+      -webkit-appearance: none; appearance: none;
+    }
+    .field select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' stroke='%2386868b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center;
+      padding-right: 36px;
+    }
+    .field select:focus,
+    .field input:focus { border-color: var(--accent-blue); }
+    .field input::placeholder { color: var(--text-tertiary); }
+    select option { background: var(--bg-card); color: var(--text-primary); }
+
+    /* ── Drop Zone ── */
+    .drop-zone {
+      margin-top: 24px; padding: 56px 24px; text-align: center;
+      border: 1.5px dashed rgba(255,255,255,0.12); border-radius: 16px;
+      cursor: pointer; transition: all 0.3s var(--ease);
+      position: relative; background: var(--bg-elevated);
+    }
+    .drop-zone:hover { border-color: rgba(255,255,255,0.24); background: rgba(255,255,255,0.02); }
+    .drop-zone.dragover { border-color: var(--accent-blue); background: rgba(41,151,255,0.04); }
+    .drop-zone.has-files { border-color: var(--green); border-style: solid; background: rgba(48,209,88,0.03); }
+    .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .drop-icon {
+      width: 48px; height: 48px; margin: 0 auto 16px;
+      border-radius: 12px; background: var(--bg-input);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+    }
+    .drop-zone h3 {
+      font-size: 1rem; font-weight: 600; color: var(--text-primary);
+      letter-spacing: -0.01em; margin-bottom: 6px;
+    }
+    .drop-zone p { color: var(--text-tertiary); font-size: 0.85rem; }
+    .file-stats {
+      margin-top: 14px; font-family: var(--mono); font-size: 0.78rem;
+      color: var(--green); letter-spacing: -0.01em;
+    }
+
+    /* ── Run Button ── */
+    .run-btn {
+      display: block; width: 100%; margin-top: 20px; padding: 14px 0;
+      background: var(--text-primary); color: var(--bg);
+      font-family: var(--font); font-size: 0.95rem; font-weight: 600;
+      letter-spacing: -0.01em; border: none; border-radius: var(--radius);
+      cursor: pointer; transition: all 0.2s var(--ease);
+    }
+    .run-btn:hover { opacity: 0.88; transform: scale(1.005); }
+    .run-btn:active { transform: scale(0.995); }
+    .run-btn:disabled { opacity: 0.25; cursor: default; transform: none; }
+
+    /* ── Divider ── */
+    .divider { height: 0.5px; background: var(--border); margin: 40px 0; }
+
+    /* ── Progress ── */
+    .progress-area { display: none; margin-top: 24px; }
+    .progress-area.visible { display: block; }
+    .progress-track { height: 4px; background: var(--bg-input); border-radius: 2px; overflow: hidden; }
+    .progress-fill {
+      height: 100%; width: 0%; border-radius: 2px;
+      background: var(--text-primary);
+      transition: width 0.5s var(--ease);
+    }
+    .progress-label {
+      margin-top: 10px; text-align: center;
+      font-size: 0.82rem; color: var(--text-secondary);
+    }
+
+    /* ── Error ── */
+    .error-box {
+      margin-top: 20px; padding: 14px 18px;
+      background: rgba(255,69,58,0.06); border: 1px solid rgba(255,69,58,0.2);
+      border-radius: var(--radius-sm); color: var(--red);
+      font-size: 0.85rem; display: none;
+    }
+    .error-box.visible { display: block; }
+
+    /* ── Results ── */
+    .results-area { display: none; }
+    .results-area.visible { display: block; }
+
+    .result-hero { text-align: center; padding: 40px 0 32px; }
+    .result-score-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 10px 32px; border-radius: 100px;
+      font-size: 0.85rem; font-weight: 700; letter-spacing: 0.06em;
+    }
+    .result-score-badge.PASS { background: var(--green); color: #000; }
+    .result-score-badge.WARNING { background: var(--yellow); color: #000; }
+    .result-score-badge.FAIL { background: var(--red); color: #fff; }
+
+    .result-summary {
+      margin-top: 16px; color: var(--text-secondary);
+      font-size: 0.95rem; line-height: 1.6; max-width: 520px;
+      margin-left: auto; margin-right: auto;
+    }
+
+    /* Tally */
+    .tally { margin: 24px 0; }
+    .tally-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--bg-input); }
+    .tally-bar .g { background: var(--green); }
+    .tally-bar .y { background: var(--yellow); }
+    .tally-bar .r { background: var(--red); }
+    .tally-labels {
+      display: flex; justify-content: center; gap: 24px;
+      margin-top: 10px; font-size: 0.8rem;
+    }
+    .tally-labels span { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); }
+    .tally-labels .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .tally-labels .dot.g { background: var(--green); }
+    .tally-labels .dot.y { background: var(--yellow); }
+    .tally-labels .dot.r { background: var(--red); }
+
+    /* Category */
+    .cat-card {
+      border: 1px solid var(--border); border-radius: var(--radius);
+      margin-bottom: 10px; overflow: hidden;
+      transition: border-color 0.2s var(--ease);
+    }
+    .cat-card:hover { border-color: var(--border-hover); }
+    .cat-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 18px; cursor: pointer;
+      transition: background 0.2s var(--ease);
+    }
+    .cat-header:hover { background: rgba(255,255,255,0.02); }
+    .cat-header h3 { font-size: 0.88rem; font-weight: 600; letter-spacing: -0.01em; }
+    .cat-badge {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;
+      padding: 3px 10px; border-radius: 100px;
+    }
+    .cat-badge.PASS { background: rgba(48,209,88,0.12); color: var(--green); }
+    .cat-badge.WARNING { background: rgba(255,214,10,0.12); color: var(--yellow); }
+    .cat-badge.FAIL { background: rgba(255,69,58,0.12); color: var(--red); }
+
+    .cat-body { padding: 0 18px 16px; display: none; }
+    .cat-card.open .cat-body { display: block; }
+
+    .finding { padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+    .finding:last-child { border: none; }
+    .finding-row { display: flex; align-items: flex-start; gap: 10px; }
+    .finding-icon { flex-shrink: 0; font-size: 0.85rem; margin-top: 2px; }
+    .finding-icon.pass { color: var(--green); }
+    .finding-icon.warning { color: var(--yellow); }
+    .finding-icon.fail { color: var(--red); }
+    .finding-title { font-size: 0.88rem; font-weight: 500; }
+    .finding-ref { color: var(--text-tertiary); font-size: 0.72rem; font-family: var(--mono); margin-left: 4px; }
+    .finding-detail { font-size: 0.82rem; color: var(--text-tertiary); margin-top: 4px; padding-left: 24px; line-height: 1.5; }
+
+    /* Recommendations */
+    .recs {
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 18px; margin-top: 16px;
+    }
+    .recs h3 { font-size: 0.85rem; font-weight: 600; margin-bottom: 10px; }
+    .recs ol { padding-left: 18px; color: var(--text-secondary); font-size: 0.85rem; }
+    .recs li { margin-bottom: 5px; line-height: 1.5; }
+
+    /* Token Info */
+    .token-line { text-align: center; margin-top: 16px; font-size: 0.75rem; color: var(--text-tertiary); font-family: var(--mono); }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 0.5px solid var(--border);
+      padding: 28px 0; text-align: center; margin-top: 64px;
+    }
+    footer p { font-size: 0.75rem; color: var(--text-tertiary); line-height: 1.8; }
+    footer a { color: var(--text-secondary); text-decoration: none; }
+    footer a:hover { color: var(--text-primary); }
+
+    /* ── Privacy Note ── */
+    .privacy-note {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      margin-top: 12px; font-size: 0.75rem; color: var(--text-tertiary);
+    }
+    .privacy-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .config-grid { grid-template-columns: 1fr; }
+      .nav-links { gap: 16px; }
+      .nav-links a { font-size: 0.72rem; }
+      .hero { padding: 100px 0 32px; }
+      .hero h1 { font-size: 1.8rem; }
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.6s var(--ease) both; }
+    .fade-up-d1 { animation-delay: 0.1s; }
+    .fade-up-d2 { animation-delay: 0.2s; }
+    .fade-up-d3 { animation-delay: 0.3s; }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="./">ipaShip <span>Web</span></a>
+    <div class="nav-links">
+      <a href="./">Home</a>
+      <a href="docs.html">Docs</a>
+      <a href="app.html" class="active">Web App</a>
+      <a href="https://github.com/async-atharv/ipaShip" target="_blank">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- Hero -->
+  <div class="hero fade-up">
+    <div class="hero-overline">ipaShip Web</div>
+    <h1>Audit in your browser.</h1>
+    <p>Upload your Flutter project. Bring your own API key. Get compliance results instantly — nothing to install.</p>
+  </div>
+
+  <!-- Config -->
+  <div class="section fade-up fade-up-d1">
+    <div class="section-label">Configuration</div>
+    <div class="config-grid">
+      <div class="field">
+        <label for="provider">Provider</label>
+        <select id="provider">
+          <option value="gemini" selected>Google Gemini</option>
+          <option value="claude">Anthropic Claude</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="model">Model</label>
+        <select id="model"></select>
+      </div>
+    </div>
+    <div class="config-grid full" style="margin-top:12px">
+      <div class="field">
+        <label for="apiKey">API Key</label>
+        <input type="password" id="apiKey" placeholder="Paste your API key here">
+      </div>
+    </div>
+    <div class="config-grid" style="margin-top:12px">
+      <div class="field">
+        <label for="platformSelect">Platform</label>
+        <select id="platformSelect">
+          <option value="both" selected>iOS + Android</option>
+          <option value="ios">iOS</option>
+          <option value="android">Android</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="modeSelect">Mode</label>
+        <select id="modeSelect">
+          <option value="both" selected>Full Audit</option>
+          <option value="store">Store Compliance</option>
+          <option value="code">Code Quality</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Drop Zone -->
+  <div class="section fade-up fade-up-d2">
+    <div class="section-label">Project Files</div>
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" webkitdirectory multiple>
+      <div class="drop-icon">📂</div>
+      <h3>Drop your Flutter project here</h3>
+      <p>Or click to select a folder</p>
+      <div class="file-stats" id="fileStats"></div>
+    </div>
+  </div>
+
+  <!-- Run -->
+  <button class="run-btn fade-up fade-up-d3" id="runBtn" disabled>Run Audit</button>
+
+  <div class="privacy-note">
+    <div class="privacy-dot"></div>
+    Your API key and files never leave your browser.
+  </div>
+
+  <!-- Error -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- Progress -->
+  <div class="progress-area" id="progressArea">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-label" id="progressStatus">Preparing...</div>
+  </div>
+
+  <!-- Results -->
+  <div class="results-area" id="resultsArea"></div>
+
+</div>
+
+<footer>
+  <div class="container">
+    <p>
+      <a href="https://github.com/async-atharv/ipaShip">ipaShip</a> by <a href="https://github.com/async-atharv">async-atharv</a><br>
+      PolyForm Noncommercial License 1.0.0
+    </p>
+  </div>
+</footer>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+//  ipaShip Web — Browser Audit Client
+//  Copyright (c) 2026 async-atharv. PolyForm Noncommercial License 1.0.0
+//  PROVENANCE_FINGERPRINT: ipaSh1p:web:app:e1f6a7c9b2d4
+// ─────────────────────────────────────────────────────────────────────────────
+
+const MODELS = {
+  gemini: ['gemini-2.5-flash','gemini-2.5-pro','gemini-2.5-flash-lite','gemini-1.5-pro','gemini-1.5-flash'],
+  claude: ['claude-sonnet-4-6','claude-haiku-4-5','claude-sonnet-4-5','claude-sonnet-4','claude-sonnet-3-7','claude-haiku-3-5'],
+};
+
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
+
+let projectFiles = {};
+let pubspecContent = null;
+let plistContent = null;
+let manifestContent = null;
+
+const $ = id => document.getElementById(id);
+const providerEl = $('provider'), modelEl = $('model'), apiKeyEl = $('apiKey');
+const platformEl = $('platformSelect'), modeEl = $('modeSelect');
+const dropZone = $('dropZone'), fileInput = $('fileInput'), fileStats = $('fileStats');
+const runBtn = $('runBtn'), errorBox = $('errorBox');
+const progressArea = $('progressArea'), progressFill = $('progressFill'), progressStatus = $('progressStatus');
+const resultsArea = $('resultsArea');
+
+function populateModels() {
+  const p = providerEl.value;
+  modelEl.innerHTML = MODELS[p].map(m => `<option value="${m}">${m}</option>`).join('');
+}
+providerEl.addEventListener('change', populateModels);
+populateModels();
+
+// ── File Handling ──
+function handleFiles(fileList) {
+  projectFiles = {}; pubspecContent = null; plistContent = null; manifestContent = null;
+  let dartCount = 0;
+  const pending = [];
+  for (const file of fileList) {
+    const path = file.webkitRelativePath || file.name;
+    if (path.match(/lib\/.*\.dart$/) && !path.includes('.g.dart') && !path.includes('.freezed.dart') && !path.includes('/generated/')) {
+      dartCount++;
+      pending.push(file.text().then(txt => { projectFiles[path] = txt; }));
+    }
+    if (path.endsWith('pubspec.yaml')) pending.push(file.text().then(txt => { pubspecContent = txt; }));
+    if (path.includes('Info.plist')) pending.push(file.text().then(txt => { plistContent = txt; }));
+    if (path.includes('AndroidManifest.xml')) pending.push(file.text().then(txt => { manifestContent = txt; }));
+  }
+  Promise.all(pending).then(() => {
+    if (dartCount > 0) {
+      dropZone.classList.add('has-files');
+      fileStats.textContent = `${dartCount} Dart files · pubspec ${pubspecContent ? '✓' : '—'} · plist ${plistContent ? '✓' : '—'} · manifest ${manifestContent ? '✓' : '—'}`;
+      checkReady();
+    } else {
+      fileStats.textContent = 'No .dart files found in lib/';
+      dropZone.classList.remove('has-files');
+      runBtn.disabled = true;
+    }
+  });
+}
+fileInput.addEventListener('change', e => handleFiles(e.target.files));
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+function checkReady() { runBtn.disabled = !(Object.keys(projectFiles).length > 0 && apiKeyEl.value.trim().length > 5); }
+apiKeyEl.addEventListener('input', checkReady);
+
+// ── Scanner ──
+const STRUCTURAL = ['class ','extends ','implements ','mixin ','enum ','abstract ','typedef ','sealed ','factory ','const ','final ','static ','required ','late ','part ','part of ','extension ','get ','set ','operator ','library '];
+const SIGNALS = ['Widget build','State<','StatefulWidget','StatelessWidget','ChangeNotifier','notifyListeners','setState','Navigator','GoRouter','Provider','Bloc','Cubit','Riverpod','http.','dio.','Dio(','SharedPreferences','Hive','FirebaseAuth','FirebaseMessaging','permission','Permission','camera','location','url_launcher','launchUrl','WebView','InAppWebView','in_app_purchase','StoreKit','Platform.is','MethodChannel','EventChannel','NotificationService','BiometricAuth','Scaffold','AppBar','MaterialApp','showDialog','TextEditingController','ListView','GridView','initState','dispose','try {','catch (','FlutterError','encrypt','decrypt','Analytics','Sentry','AppTrackingTransparency','Isolate','compute(','CodePush','shorebird','DynamicLibrary','http://','https://'];
+function extractSkeleton(source) {
+  const lines = source.split('\n'); const result = [];
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line || line.startsWith('//') || line.startsWith('import ') || line.startsWith('export ') || line.startsWith('/*')) continue;
+    if (STRUCTURAL.some(k => line.includes(k)) || SIGNALS.some(s => line.includes(s)) || /^\}\s*$/.test(line)) result.push(raw.replace(/\s+$/, ''));
+    if (result.length >= 300) break;
+  }
+  return result.join('\n');
+}
+
+// ── Parsers ──
+function parsePubspec(yaml) {
+  const info = { name: 'unknown', version: '', description: '', dependencies: [], devDependencies: [] };
+  if (!yaml) return info;
+  const nm = yaml.match(/^name:\s*(.+)/m); if (nm) info.name = nm[1].trim();
+  const vr = yaml.match(/^version:\s*(.+)/m); if (vr) info.version = vr[1].trim();
+  const ds = yaml.match(/^description:\s*(.+)/m); if (ds) info.description = ds[1].trim();
+  const dp = yaml.match(/^dependencies:\s*\n((?:[ \t]+.+\n?)*)/m);
+  if (dp) info.dependencies = [...dp[1].matchAll(/^\s+(\w[\w_-]*):/gm)].map(m => m[1]);
+  const dv = yaml.match(/^dev_dependencies:\s*\n((?:[ \t]+.+\n?)*)/m);
+  if (dv) info.devDependencies = [...dv[1].matchAll(/^\s+(\w[\w_-]*):/gm)].map(m => m[1]);
+  return info;
+}
+function parsePlist(xml) {
+  if (!xml) return { found: false, permissions: {} };
+  const perms = {}; const re = /<key>(NS\w*UsageDescription)<\/key>\s*<string>([^<]*)<\/string>/g; let m;
+  while ((m = re.exec(xml))) perms[m[1]] = m[2];
+  return { found: true, permissions: perms };
+}
+function parseManifest(xml) {
+  if (!xml) return { found: false, permissions: [] };
+  const perms = []; const re = /uses-permission\s+android:name="([^"]+)"/g; let m;
+  while ((m = re.exec(xml))) perms.push(m[1]);
+  return { found: true, permissions: perms };
+}
+
+// ── Prompt Builder ──
+function buildPrompt(mode, platform) {
+  const ios = `\niOS APP STORE AUDIT CATEGORIES:\n1. PRIVACY & PERMISSIONS\n2. DATA COLLECTION & TRACKING\n3. CONTENT & DESIGN\n4. IN-APP PURCHASES\n5. LEGAL & COMPLIANCE\n6. FORBIDDEN PATTERNS`;
+  const android = `\nGOOGLE PLAY STORE AUDIT CATEGORIES:\n1. PERMISSIONS & DATA SAFETY\n2. DATA COLLECTION & PRIVACY\n3. CONTENT & BEHAVIOR\n4. BILLING & MONETIZATION\n5. TARGET API LEVEL & COMPATIBILITY\n6. MALWARE & ABUSE`;
+  const code = `\nCODE QUALITY AUDIT CATEGORIES:\n1. SECURITY\n2. ARCHITECTURE\n3. ERROR HANDLING\n4. PERFORMANCE\n5. BEST PRACTICES\n6. DEPENDENCIES`;
+  const fmt = `\nRESPONSE FORMAT (strict JSON):\n{"summary":"...","score":"PASS"|"WARNING"|"FAIL","categories":[{"name":"...","status":"PASS"|"WARNING"|"FAIL","findings":[{"severity":"pass"|"warning"|"fail","title":"...","detail":"...","guideline":"..."}]}],"recommendations":["..."]}\nFlag real risks, not theoretical ones. Reference specific file paths.\nRespond ONLY with the JSON object, no markdown fencing, no extra text.`;
+  let cats = '';
+  if (mode !== 'code') { if (platform !== 'android') cats += ios; if (platform !== 'ios') cats += android; }
+  if (mode !== 'store') cats += code;
+  const label = { ios: 'Apple App Store', android: 'Google Play Store', both: 'Apple App Store and Google Play' }[platform] || 'App Store';
+  return `You are an experienced ${label} reviewer conducting a pre-submission compliance audit of a Flutter/Dart application.\n${cats}\n${fmt}`;
+}
+function buildUserMessage() {
+  const pubspec = parsePubspec(pubspecContent);
+  const plist = parsePlist(plistContent);
+  const manifest = parseManifest(manifestContent);
+  const s = [];
+  s.push('=== PUBSPEC_METADATA ===', `App: ${pubspec.name} ${pubspec.version}`);
+  if (pubspec.description) s.push(`Description: ${pubspec.description}`);
+  s.push(`Dependencies: ${pubspec.dependencies.join(', ') || '(none)'}`, `Dev Dependencies: ${pubspec.devDependencies.join(', ') || '(none)'}`);
+  if (plist.found) { s.push('\n=== INFO_PLIST_PERMISSIONS ==='); const k = Object.entries(plist.permissions); if (!k.length) s.push('No NS*UsageDescription keys found.'); else k.forEach(([a,b]) => s.push(`${a}: "${b}"`)); }
+  if (manifest.found) { s.push('\n=== ANDROID_MANIFEST_PERMISSIONS ==='); if (!manifest.permissions.length) s.push('No <uses-permission> entries.'); else manifest.permissions.forEach(p => s.push(p)); }
+  s.push('\n=== DART_SKELETONS ==='); let total = 0;
+  for (const [path, content] of Object.entries(projectFiles)) {
+    const sk = extractSkeleton(content); if (!sk) continue;
+    const lines = sk.split('\n').length; if (total + lines > 8000) break;
+    total += lines; s.push(`\n--- ${path} ---`, sk);
+  }
+  return s.join('\n');
+}
+
+// ── API ──
+async function callGemini(userMsg, sysPrompt, key, model) {
+  const res = await fetch(`${GEMINI_URL}/${model}:generateContent`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+    body: JSON.stringify({ system_instruction: { parts: [{ text: sysPrompt }] }, contents: [{ parts: [{ text: userMsg }] }], generationConfig: { temperature: 0.2, responseMimeType: 'application/json' } }),
+  });
+  if (!res.ok) { const b = await res.text(); throw new Error(res.status === 400 && b.includes('API_KEY') ? 'Invalid API key.' : `Gemini error (${res.status}): ${b.slice(0,300)}`); }
+  const d = await res.json(); const text = d.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Gemini returned an empty response.');
+  const u = d.usageMetadata || {};
+  return { text, tokens: { input: u.promptTokenCount, output: u.candidatesTokenCount, total: u.totalTokenCount } };
+}
+async function callClaude(userMsg, sysPrompt, key, model) {
+  const res = await fetch(CLAUDE_URL, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify({ model, max_tokens: 8192, system: sysPrompt, messages: [{ role: 'user', content: userMsg }], temperature: 0.2 }),
+  });
+  if (!res.ok) { const b = await res.text(); throw new Error(res.status === 401 ? 'Invalid API key.' : `Claude error (${res.status}): ${b.slice(0,300)}`); }
+  const d = await res.json(); const text = d.content?.[0]?.text;
+  if (!text) throw new Error('Claude returned an empty response.');
+  const u = d.usage || {};
+  return { text, tokens: { input: u.input_tokens, output: u.output_tokens, total: (u.input_tokens||0)+(u.output_tokens||0) } };
+}
+
+// ── Progress ──
+function setProgress(pct, msg) { progressFill.style.width = pct+'%'; progressStatus.textContent = msg; }
+function showError(msg) { errorBox.textContent = msg; errorBox.classList.add('visible'); }
+function hideError() { errorBox.classList.remove('visible'); }
+
+// ── Render ──
+function renderResults(result, tokens) {
+  let pc = 0, wc = 0, fc = 0;
+  (result.categories||[]).forEach(c => (c.findings||[]).forEach(f => { if (f.severity==='pass') pc++; else if (f.severity==='warning') wc++; else fc++; }));
+  const t = pc+wc+fc||1;
+  const pp = (pc/t*100).toFixed(1), wp = (wc/t*100).toFixed(1), fp = (fc/t*100).toFixed(1);
+
+  let h = `<div class="divider"></div>
+    <div class="result-hero">
+      <div class="result-score-badge ${result.score}">${result.score}</div>
+      <div class="result-summary">${result.summary||''}</div>
+    </div>
+    <div class="tally">
+      <div class="tally-bar"><div class="g" style="width:${pp}%"></div><div class="y" style="width:${wp}%"></div><div class="r" style="width:${fp}%"></div></div>
+      <div class="tally-labels">
+        <span><span class="dot g"></span>${pc} passed</span>
+        <span><span class="dot y"></span>${wc} warnings</span>
+        <span><span class="dot r"></span>${fc} failed</span>
+      </div>
+    </div>`;
+
+  for (const cat of result.categories||[]) {
+    h += `<div class="cat-card"><div class="cat-header" onclick="this.parentElement.classList.toggle('open')">
+      <h3>${cat.name||''}</h3><span class="cat-badge ${cat.status}">${cat.status}</span>
+    </div><div class="cat-body">`;
+    for (const f of cat.findings||[]) {
+      const ic = {pass:'✓',warning:'⚠',fail:'✕'}[f.severity]||'⚠';
+      h += `<div class="finding"><div class="finding-row">
+        <span class="finding-icon ${f.severity}">${ic}</span>
+        <span class="finding-title">${f.title||''}${f.guideline?`<span class="finding-ref">${f.guideline}</span>`:''}</span>
+      </div>${f.detail?`<div class="finding-detail">${f.detail}</div>`:''}</div>`;
+    }
+    h += '</div></div>';
+  }
+
+  if (result.recommendations?.length) {
+    h += '<div class="recs"><h3>Recommendations</h3><ol>';
+    result.recommendations.forEach(r => h += `<li>${r}</li>`);
+    h += '</ol></div>';
+  }
+  if (tokens) {
+    const f = n => n!=null?n.toLocaleString():'—';
+    h += `<div class="token-line">Tokens: ${f(tokens.input)} in · ${f(tokens.output)} out · ${f(tokens.total)} total</div>`;
+  }
+  resultsArea.innerHTML = h;
+  resultsArea.classList.add('visible');
+  resultsArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Run ──
+runBtn.addEventListener('click', async () => {
+  hideError(); resultsArea.classList.remove('visible'); resultsArea.innerHTML = '';
+  progressArea.classList.add('visible'); runBtn.disabled = true;
+  const provider = providerEl.value, model = modelEl.value, key = apiKeyEl.value.trim();
+  const platform = platformEl.value, mode = modeEl.value;
+  try {
+    setProgress(10, 'Building code skeleton…');
+    const sys = buildPrompt(mode, platform), usr = buildUserMessage();
+    const est = Math.ceil((sys.length+usr.length)/4);
+    setProgress(25, `~${est.toLocaleString()} tokens`);
+    const limit = provider==='claude'?150000:900000;
+    if (est > limit) throw new Error(`Input (~${est.toLocaleString()} tokens) exceeds ${provider} limit.`);
+    setProgress(40, `Sending to ${model}…`);
+    const resp = provider==='claude' ? await callClaude(usr,sys,key,model) : await callGemini(usr,sys,key,model);
+    setProgress(85, 'Parsing…');
+    const cleaned = resp.text.replace(/^```(?:json)?\s*\n?/i,'').replace(/\n?```\s*$/i,'').trim();
+    let result; try { result = JSON.parse(cleaned); } catch { throw new Error('Failed to parse AI response as JSON.'); }
+    setProgress(100, 'Complete');
+    setTimeout(() => { progressArea.classList.remove('visible'); renderResults(result, resp.tokens); runBtn.disabled = false; }, 300);
+  } catch (err) { progressArea.classList.remove('visible'); showError(err.message); runBtn.disabled = false; }
+});
+</script>
+</body>
+</html>

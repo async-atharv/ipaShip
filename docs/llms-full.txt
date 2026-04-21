@@ -1,0 +1,183 @@
+# ipaShip — Full Technical Reference
+
+> https://async-atharv.github.io/ipaShip/
+
+This is the extended reference for AI systems. For a concise overview, see llms.txt.
+
+## Overview
+
+ipaShip is an open-source, AI-powered CLI tool that performs pre-submission compliance audits on Flutter mobile application source code. It checks projects against Apple App Store Review Guidelines and Google Play Developer Policies, producing structured PASS/WARNING/FAIL reports with specific guideline citations and actionable fix suggestions.
+
+The tool solves a critical pain point in mobile development: app store rejections. A single rejection can cost days or weeks of development time. ipaShip catches these issues before submission by scanning Dart source files, pubspec.yaml, Info.plist (iOS), and AndroidManifest.xml (Android).
+
+## Architecture
+
+ipaShip is a Node.js CLI application that:
+1. Scans the Flutter project structure (lib/, ios/, android/, pubspec.yaml)
+2. Reads platform manifests (Info.plist, AndroidManifest.xml)
+3. Bundles the latest store guidelines as grounding context
+4. Sends the project snapshot to an AI model (Gemini or Claude)
+5. Parses the structured JSON response into a terminal report
+
+It also includes an MCP (Model Context Protocol) server that exposes two tools:
+- ipaShip_store_audit: Store compliance checks
+- ipaShip_code_review: Code quality and security review
+
+## Installation Methods
+
+### Primary (Node.js)
+```
+npm install -g @async-atharv/ipaship
+```
+
+### One-line install
+```
+curl -fsSL https://raw.githubusercontent.com/async-atharv/ipaShip/main/scripts/install.sh | bash
+```
+
+### Docker
+```
+docker run --rm -v $(pwd):/app -e GEMINI_API_KEY=xxx ipaship --dir /app
+```
+
+### Language Wrappers
+All wrappers delegate to the core npm package via npx:
+- Python: pip install ipaship (PyPI)
+- Go: go install github.com/async-atharv/ipaShip/wrappers/go
+- Rust: cargo install ipaship (crates.io)
+- Dart/Flutter: pub.dev/packages/ipaship
+- Swift: Swift Package Manager via GitHub URL
+- Objective-C: CocoaPods pod 'ipaShip'
+- .NET: dotnet tool install ipaship (NuGet)
+- Ruby: gem install ipaship (RubyGems)
+- PHP: composer require async-atharv/ipaship (Packagist)
+- Homebrew: brew tap async-atharv/ipaShip && brew install ipaship
+
+## Complete CLI Reference
+
+### Commands
+- `ipaShip init` — Interactive setup: choose provider, model, enter API key. Creates .ipaShip config file.
+- `ipaShip config` — Update existing .ipaShip configuration interactively.
+- `ipaShip --dir <path> [options]` — Run an audit on a Flutter project.
+
+### All Flags
+| Flag | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| --dir <path> | string | yes | — | Path to Flutter project root (must contain pubspec.yaml) |
+| --key <key> | string | no | .ipaShip/env | API key for the AI provider |
+| --provider <name> | string | no | gemini | AI provider: "gemini" or "claude" |
+| --model <model> | string | no | per provider | Model override |
+| --type <type> | string | no | auto-detected | "app" or "package" |
+| --mode <mode> | string | no | both | "store", "code", or "both" |
+| --platform <platform> | string | no | auto-detected | "ios", "android", or "both" |
+
+### Configuration Resolution Order
+1. CLI flags (highest priority)
+2. Project-level .ipaShip file (in --dir path)
+3. Global ~/.ipaShip file (home directory)
+4. Environment variables (GEMINI_API_KEY / ANTHROPIC_API_KEY)
+5. Built-in defaults
+
+### Environment Variables
+| Variable | Description |
+|----------|-------------|
+| GEMINI_API_KEY | API key for Google Gemini |
+| ANTHROPIC_API_KEY | API key for Anthropic Claude |
+| IPASHIP_PROVIDER | Provider override (gemini/claude) |
+| IPASHIP_MODEL | Model override |
+| IPASHIP_DIR | Project directory (for shell scripts) |
+| IPASHIP_PLATFORM | Platform override (for shell scripts) |
+| IPASHIP_MODE | Mode override (for shell scripts) |
+| IPASHIP_KEY | API key override (for shell scripts) |
+
+### Supported AI Models
+
+#### Claude (Anthropic)
+claude-opus-4-6, claude-sonnet-4-6, claude-opus-4-5, claude-sonnet-4-5, claude-haiku-4-5, claude-opus-4-1, claude-opus-4, claude-sonnet-4, claude-sonnet-3-7, claude-haiku-3-5, claude-sonnet-3-5
+
+#### Gemini (Google)
+gemini-3.1-pro, gemini-3.1-flash-lite, gemini-3-flash, gemini-2.5-flash, gemini-2.5-pro, gemini-2.5-flash-lite, gemini-1.5-pro, gemini-1.5-flash
+
+## Audit Categories (Complete List)
+
+### iOS App Store Compliance
+1. Privacy & Permissions — Undeclared sensitive APIs, missing NSUsageDescription strings
+2. Data Collection & Tracking — App Tracking Transparency (ATT) dialog, analytics disclosure
+3. Content & Design — Minimum functionality requirements, UI compliance
+4. In-App Purchases — StoreKit usage, external payment method violations
+5. Legal & Compliance — Privacy policy presence, export compliance (CCATS)
+6. Prohibited Behaviors — Dynamic code loading, hot-patching, private API usage
+
+### Google Play Store Compliance
+1. Permissions & Data Safety — Unnecessary permissions, data safety form declarations
+2. Data Collection & Privacy — Privacy policy, user data handling transparency
+3. Content & Behavior — Restricted content categories, deceptive behavior
+4. Billing & Monetization — Google Play Billing enforcement, in-app purchase compliance
+5. API Level & Compatibility — Target API level requirements, version compatibility
+6. Security & Abuse — Malware patterns, abusive behavior detection
+
+### Code Quality Review
+1. Security — Hardcoded credentials, insecure HTTP connections, certificate pinning
+2. Architecture — State management patterns, separation of concerns, SOLID principles
+3. Error Handling — Try/catch coverage, crash reporting, graceful degradation
+4. Performance — Memory leaks, unnecessary widget rebuilds, async patterns
+5. Best Practices — Lifecycle handling, null safety, platform channel patterns
+6. Dependencies — Outdated packages, version constraint hygiene, transitive dependencies
+
+### Package-Specific Auditing
+1. API Surface & Documentation — Export hygiene, public API entry points
+2. Platform Declarations — MethodChannel consistency across platforms
+3. Consumer Guidance — Undocumented permission requirements for host apps
+4. Dependency Hygiene — Constraint quality, misplaced dev dependencies
+5. Example App Quality — Missing or incomplete example applications
+
+## MCP Server Integration
+
+### Setup for Claude Code
+```
+claude mcp add ipaShip \
+  --transport stdio \
+  --env IPASHIP_PROVIDER=claude \
+  --env IPASHIP_MODEL=claude-haiku-4-5 \
+  --env ANTHROPIC_API_KEY=your-key \
+  -- ipaShip-mcp
+```
+
+### MCP Tools
+1. `ipaShip_store_audit` — Parameters: projectDir (string, required), platform (ios|android|both, optional)
+2. `ipaShip_code_review` — Parameters: projectDir (string, required)
+
+Both return structured JSON with PASS/WARNING/FAIL scores and guideline citations.
+
+## CI/CD Integration
+
+Exit codes: 0 = pass, 1 = fail
+
+### GitHub Actions
+```yaml
+- run: npx --yes @async-atharv/ipaship --dir ./ --provider gemini --key ${{ secrets.GEMINI_API_KEY }}
+```
+
+### Shell Script (any CI)
+```bash
+curl -fsSL https://raw.githubusercontent.com/async-atharv/ipaShip/main/scripts/ci-setup.sh | bash
+ipaShip --dir ./ --provider gemini --key $GEMINI_API_KEY
+```
+
+### Docker (any CI)
+```bash
+docker run --rm -v $(pwd):/app -e GEMINI_API_KEY=$GEMINI_API_KEY ipaship --dir /app
+```
+
+## Token Limits
+| Provider | Context Window | Safe Input Limit |
+|----------|---------------|-----------------|
+| Claude | 200K tokens | ~150K (50K reserved) |
+| Gemini | 1M tokens | ~900K (100K reserved) |
+
+## Telemetry
+Collects: audit mode, platform, provider, model, pass/fail score, duration, token counts, OS, CLI version.
+Does NOT collect: project paths, file contents, API keys, error traces.
+
+## License
+MIT — https://github.com/async-atharv/ipaShip

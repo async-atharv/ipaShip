@@ -1,0 +1,44 @@
+# ──────────────────────────────────────────────────────────────
+#  ipaShip — GitLab CI Pipeline
+#  Copy this to .gitlab-ci.yml or include it
+# ──────────────────────────────────────────────────────────────
+
+stages:
+  - audit
+
+variables:
+  NODE_VERSION: "20"
+
+.ipaship-base:
+  image: node:${NODE_VERSION}-alpine
+  before_script:
+    - npm install -g @async-atharv/ipaship
+
+ipaship:ios:
+  extends: .ipaship-base
+  stage: audit
+  script:
+    - ipaShip --dir ./ --platform ios --mode both --provider gemini --key $GEMINI_API_KEY
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+ipaship:android:
+  extends: .ipaship-base
+  stage: audit
+  script:
+    - ipaShip --dir ./ --platform android --mode both --provider gemini --key $GEMINI_API_KEY
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+ipaship:code:
+  extends: .ipaship-base
+  stage: audit
+  script:
+    - ipaShip --dir ./ --mode code --provider gemini --key $GEMINI_API_KEY
+  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
