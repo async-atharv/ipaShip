@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ipaShip Docs — Complete CLI Reference, Configuration, CI/CD & MCP Setup</title>
+  <meta name="description" content="Full documentation for ipaShip CLI: installation, configuration, audit modes, supported AI models, MCP server setup for Claude Code/Cursor, CI/CD templates, and environment variable reference.">
+  <meta name="keywords" content="ipaShip docs, flutter audit cli documentation, ipaShip configuration, ipaShip ci cd setup, ipaShip mcp server, flutter compliance tool docs">
+  <meta name="author" content="async-atharv">
+  <meta name="robots" content="index, follow, max-snippet:-1">
+  <link rel="canonical" href="https://async-atharv.github.io/ipaShip/docs.html">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="ipaShip Documentation — CLI Reference & Setup Guide">
+  <meta property="og:description" content="Complete docs for ipaShip: installation, config, audit modes, MCP server, CI/CD integration.">
+  <meta property="og:url" content="https://async-atharv.github.io/ipaShip/docs.html">
+  <meta property="og:site_name" content="ipaShip">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="ipaShip Documentation">
+  <meta name="twitter:description" content="Full reference for the ipaShip Flutter compliance audit CLI.">
+
+  <!-- JSON-LD: TechArticle -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org", "@type": "TechArticle",
+    "headline": "ipaShip Documentation — Complete CLI Reference",
+    "description": "Full documentation for ipaShip: installation, configuration, audit modes (store/code/both), supported AI models (Gemini, Claude), MCP server setup, CI/CD pipeline integration, and environment variable reference.",
+    "url": "https://async-atharv.github.io/ipaShip/docs.html",
+    "author": { "@type": "Person", "name": "async-atharv", "url": "https://github.com/async-atharv" },
+    "about": { "@type": "SoftwareApplication", "name": "ipaShip", "url": "https://async-atharv.github.io/ipaShip/" },
+    "inLanguage": "en"
+  }
+  </script>
+
+  <!-- JSON-LD: BreadcrumbList -->
+  <script type="application/ld+json">
+  { "@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{ "@type": "ListItem", "position": 1, "name": "Home", "item": "https://async-atharv.github.io/ipaShip/" }, { "@type": "ListItem", "position": 2, "name": "Documentation", "item": "https://async-atharv.github.io/ipaShip/docs.html" }] }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- PostHog -->
+  <script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing identify alias set_config startSessionRecording people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user toString".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('phc_JcSoYrxMXvJjCtlePCFI6UuhNbwq33WXNeUKmDB6Msz', { api_host: 'https://us.i.posthog.com', person_profiles: 'anonymous', autocapture: false });
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #000; --bg-card: #111; --bg-input: #1a1a1a;
+      --border: rgba(255,255,255,0.08); --border-hover: rgba(255,255,255,0.16);
+      --text: #f5f5f7; --text-secondary: #86868b; --text-tertiary: #6e6e73;
+      --blue: #2997ff; --green: #30d158; --yellow: #ffd60a; --red: #ff453a;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      --mono: 'SF Mono', SFMono-Regular, ui-monospace, Menlo, monospace;
+      --radius: 12px; --ease: cubic-bezier(0.25,0.1,0.25,1);
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+    ::selection { background: rgba(41,151,255,0.3); }
+    a { color: var(--blue); text-decoration: none; transition: color 0.2s var(--ease); }
+    a:hover { text-decoration: underline; }
+
+    /* Nav */
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(0,0,0,0.72); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 0.5px solid var(--border); }
+    .nav-inner { max-width: 980px; margin: 0 auto; padding: 0 22px; display: flex; align-items: center; justify-content: space-between; height: 48px; }
+    .nav-logo { font-size: 1.05rem; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px; }
+    .nav-logo span { opacity: 0.5; font-weight: 400; }
+    .nav-links { display: flex; gap: 28px; align-items: center; }
+    .nav-links a { color: var(--text-secondary); font-size: 0.8rem; font-weight: 400; text-decoration: none; }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+    .nav-links a.active { color: var(--text); }
+    .mobile-toggle { display: none; background: none; border: none; color: var(--text); font-size: 1.3rem; cursor: pointer; }
+
+    /* Layout */
+    .docs-wrapper { max-width: 980px; margin: 0 auto; padding: 0 22px; display: grid; grid-template-columns: 200px 1fr; gap: 48px; padding-top: 80px; padding-bottom: 80px; }
+
+    /* Sidebar */
+    .sidebar { position: sticky; top: 72px; height: fit-content; }
+    .sidebar-group { margin-bottom: 20px; }
+    .sidebar-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary); padding: 4px 0; margin-bottom: 4px; }
+    .sidebar a { display: block; padding: 5px 0 5px 12px; color: var(--text-secondary); font-size: 0.82rem; text-decoration: none; border-left: 2px solid transparent; transition: all 0.15s var(--ease); }
+    .sidebar a:hover { color: var(--text); border-color: var(--text-tertiary); }
+
+    /* Content */
+    .docs-content h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin: 56px 0 16px; padding-top: 20px; border-top: 0.5px solid var(--border); }
+    .docs-content h2:first-child { margin-top: 0; border-top: none; padding-top: 0; }
+    .docs-content h3 { font-size: 1.1rem; font-weight: 600; letter-spacing: -0.01em; margin: 32px 0 10px; }
+    .docs-content h4 { font-size: 0.95rem; font-weight: 600; margin: 24px 0 8px; color: var(--text-secondary); }
+    .docs-content p { color: var(--text-secondary); margin-bottom: 14px; font-size: 0.92rem; line-height: 1.6; }
+    .docs-content code { background: var(--bg-input); padding: 2px 7px; border-radius: 5px; font-family: var(--mono); font-size: 0.82em; color: var(--blue); }
+    .docs-content strong { color: var(--text); font-weight: 600; }
+    .docs-content blockquote { border-left: 3px solid var(--yellow); padding: 12px 16px; color: var(--text-secondary); margin: 16px 0; background: rgba(255,214,10,0.04); border-radius: 0 8px 8px 0; font-size: 0.9rem; }
+    .docs-content ol, .docs-content ul { color: var(--text-secondary); padding-left: 18px; margin-bottom: 14px; font-size: 0.92rem; }
+    .docs-content li { margin-bottom: 4px; line-height: 1.6; }
+
+    /* Tables */
+    .docs-content table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.88rem; }
+    .docs-content th { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); font-weight: 600; font-size: 0.82rem; }
+    .docs-content td { padding: 10px 14px; border-bottom: 0.5px solid var(--border); color: var(--text-secondary); }
+
+    /* Code blocks */
+    .code-block { background: var(--bg-input); border: 1px solid var(--border); padding: 16px 18px; border-radius: 10px; font-family: var(--mono); font-size: 0.8rem; overflow-x: auto; line-height: 1.8; margin: 12px 0 16px; color: var(--text-secondary); }
+    .code-block .c { color: var(--text-tertiary); }
+
+    /* Footer */
+    footer { border-top: 0.5px solid var(--border); padding: 32px 0; text-align: center; }
+    footer .links { display: flex; justify-content: center; gap: 28px; margin-bottom: 10px; }
+    footer .links a { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; text-decoration: none; }
+    footer .links a:hover { color: var(--text); }
+    footer p { font-size: 0.75rem; color: var(--text-tertiary); line-height: 2; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .docs-wrapper { grid-template-columns: 1fr; padding-top: 68px; }
+      .sidebar { display: none; }
+      .nav-links { display: none; }
+      .nav-links.open { display: flex; flex-direction: column; position: absolute; top: 48px; left: 0; right: 0; background: rgba(0,0,0,0.95); border-bottom: 0.5px solid var(--border); padding: 16px 22px; gap: 14px; }
+      .mobile-toggle { display: block; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="index.html">ipaShip <span>Docs</span></a>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html">Home</a>
+      <a href="index.html#features">Features</a>
+      <a href="app.html">Web App</a>
+      <a href="docs.html" class="active">Docs</a>
+      <a href="https://github.com/async-atharv/ipaShip" target="_blank">GitHub</a>
+    </div>
+    <button class="mobile-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')">&#x2630;</button>
+  </div>
+</nav>
+
+<div class="docs-wrapper">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-group">
+      <div class="sidebar-label">Getting Started</div>
+      <a href="#installation">Installation</a>
+      <a href="#quick-start">Quick Start</a>
+      <a href="#commands">Commands</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-label">Configuration</div>
+      <a href="#options">Options</a>
+      <a href="#config-file">Config File</a>
+      <a href="#models">Supported Models</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-label">Audit Modes</div>
+      <a href="#modes">Store / Code / Both</a>
+      <a href="#platforms">Platform Targeting</a>
+      <a href="#packages">Package Auditing</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-label">MCP Server</div>
+      <a href="#mcp-setup">Setup</a>
+      <a href="#mcp-tools">Tools</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-label">Integration</div>
+      <a href="#ci">CI / CD</a>
+      <a href="#token-limits">Token Limits</a>
+    </div>
+  </aside>
+
+  <!-- Content -->
+  <main class="docs-content">
+
+    <h2 id="installation">Installation</h2>
+    <p>Install ipaShip globally via npm. Requires <strong>Node.js 18+</strong>.</p>
+    <div class="code-block">$ npm install -g @async-atharv/ipaship</div>
+    <p>Verify the installation:</p>
+    <div class="code-block">$ ipaShip --version<br>1.1.0</div>
+
+    <h2 id="quick-start">Quick Start</h2>
+    <p>Set up your AI provider and API key, then run your first audit:</p>
+    <div class="code-block">
+<span class="c"># Interactive setup — select provider, model, enter API key</span><br>
+$ ipaShip init<br><br>
+<span class="c"># Run the audit (auto-detects platform and project type)</span><br>
+$ ipaShip --dir /path/to/flutter/project
+    </div>
+    <p>Or pass everything inline without a config file:</p>
+    <div class="code-block">$ ipaShip --dir ./ --provider claude --key YOUR_API_KEY</div>
+
+    <h2 id="commands">Commands</h2>
+    <table>
+      <thead><tr><th>Command</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>ipaShip init</code></td><td>Create a <code>.ipaShip</code> config file interactively (provider, model, API key)</td></tr>
+        <tr><td><code>ipaShip config</code></td><td>Update provider, model, or API key in an existing <code>.ipaShip</code></td></tr>
+        <tr><td><code>ipaShip --dir &lt;path&gt;</code></td><td>Run the audit (default command)</td></tr>
+        <tr><td><code>ipaShip --help</code></td><td>Show all options</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="options">Options Reference</h2>
+    <table>
+      <thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead>
+      <tbody>
+        <tr><td><code>--dir &lt;path&gt;</code></td><td>Path to Flutter project root</td><td><em>required</em></td></tr>
+        <tr><td><code>--key &lt;key&gt;</code></td><td>API key</td><td><code>.ipaShip</code> / env var</td></tr>
+        <tr><td><code>--provider &lt;name&gt;</code></td><td><code>gemini</code> or <code>claude</code></td><td><code>gemini</code></td></tr>
+        <tr><td><code>--model &lt;model&gt;</code></td><td>Model override</td><td>Per provider default</td></tr>
+        <tr><td><code>--type &lt;type&gt;</code></td><td><code>app</code> or <code>package</code></td><td>Auto-detected</td></tr>
+        <tr><td><code>--mode &lt;mode&gt;</code></td><td><code>store</code>, <code>code</code>, or <code>both</code></td><td><code>both</code></td></tr>
+        <tr><td><code>--platform &lt;platform&gt;</code></td><td><code>ios</code>, <code>android</code>, or <code>both</code></td><td>Auto-detected</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="config-file">Configuration File</h2>
+    <p>Run <code>ipaShip init</code> to create a <code>.ipaShip</code> config file, or create one manually:</p>
+    <div class="code-block">
+{<br>
+&nbsp;&nbsp;"provider": "claude",<br>
+&nbsp;&nbsp;"key": "sk-ant-...",<br>
+&nbsp;&nbsp;"model": "claude-sonnet-4-6",<br>
+&nbsp;&nbsp;"platform": "both",<br>
+&nbsp;&nbsp;"mode": "both"<br>
+}
+    </div>
+    <h3>Resolution Order</h3>
+    <p>Values are resolved in this order (highest priority wins):</p>
+    <ol>
+      <li>CLI flags (<code>--key</code>, <code>--provider</code>, etc.)</li>
+      <li>Project-level <code>.ipaShip</code> (in the <code>--dir</code> path)</li>
+      <li>Global <code>~/.ipaShip</code> (home directory)</li>
+      <li>Environment variables (<code>GEMINI_API_KEY</code> / <code>ANTHROPIC_API_KEY</code>)</li>
+      <li>Built-in defaults</li>
+    </ol>
+    <blockquote>Add <code>.ipaShip</code> to your <code>.gitignore</code> — it contains your API key.</blockquote>
+    <p>Use <code>ipaShip config</code> to update settings anytime via interactive arrow-key menus.</p>
+
+    <h2 id="models">Supported Models</h2>
+    <h3>Claude (Anthropic)</h3>
+    <table>
+      <thead><tr><th>Model</th><th>Tier</th></tr></thead>
+      <tbody>
+        <tr><td><code>claude-sonnet-4-6</code></td><td>Recommended — balanced flagship</td></tr>
+        <tr><td><code>claude-opus-4-6</code></td><td>Frontier — highest reasoning</td></tr>
+        <tr><td><code>claude-haiku-4-5</code></td><td>Fastest &amp; cheapest</td></tr>
+        <tr><td><code>claude-opus-4-5</code></td><td>Frontier intelligence</td></tr>
+        <tr><td><code>claude-sonnet-4-5</code></td><td>Balanced — enterprise</td></tr>
+        <tr><td><code>claude-opus-4-1</code></td><td>Advanced reasoning</td></tr>
+        <tr><td><code>claude-opus-4</code></td><td>Advanced reasoning</td></tr>
+        <tr><td><code>claude-sonnet-4</code></td><td>Balanced</td></tr>
+        <tr><td><code>claude-sonnet-3-7</code></td><td>Legacy — balanced</td></tr>
+        <tr><td><code>claude-haiku-3-5</code></td><td>Legacy — fast</td></tr>
+        <tr><td><code>claude-sonnet-3-5</code></td><td>Legacy — balanced</td></tr>
+      </tbody>
+    </table>
+    <h3>Gemini (Google)</h3>
+    <table>
+      <thead><tr><th>Model</th><th>Tier</th></tr></thead>
+      <tbody>
+        <tr><td><code>gemini-3.1-pro</code></td><td>Frontier — advanced reasoning, 1M context</td></tr>
+        <tr><td><code>gemini-3.1-flash-lite</code></td><td>Ultra-efficient — lowest latency</td></tr>
+        <tr><td><code>gemini-3-flash</code></td><td>High-performance multimodal + coding</td></tr>
+        <tr><td><code>gemini-2.5-flash</code></td><td>Recommended — fast &amp; cheap</td></tr>
+        <tr><td><code>gemini-2.5-pro</code></td><td>Strong reasoning + multimodal</td></tr>
+        <tr><td><code>gemini-2.5-flash-lite</code></td><td>Lightweight — high-volume</td></tr>
+        <tr><td><code>gemini-1.5-pro</code></td><td>Legacy — early multimodal</td></tr>
+        <tr><td><code>gemini-1.5-flash</code></td><td>Legacy — fast</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="modes">Audit Modes</h2>
+    <h3><code>--mode store</code></h3>
+    <p>Checks only store compliance: permissions, privacy, IAP, legal, content policy. Loads bundled Apple/Google guidelines as grounding context. Best for pre-submission checks.</p>
+    <div class="code-block">$ ipaShip --dir ./ --mode store</div>
+
+    <h3><code>--mode code</code></h3>
+    <p>Checks only code quality: security, architecture, error handling, performance, best practices, dependencies. Skips guideline loading entirely.</p>
+    <div class="code-block">$ ipaShip --dir ./ --mode code</div>
+
+    <h3><code>--mode both</code> (default)</h3>
+    <p>Runs both store compliance and code quality checks in a single audit. Uses more tokens but gives the most comprehensive report.</p>
+    <div class="code-block">$ ipaShip --dir ./</div>
+
+    <h2 id="platforms">Platform Targeting</h2>
+    <p>ipaShip auto-detects the target platform by checking for <code>ios/</code> and <code>android/</code> directories. Override with <code>--platform</code>:</p>
+    <div class="code-block">
+<span class="c"># iOS App Store only</span><br>
+$ ipaShip --dir ./ --platform ios<br><br>
+<span class="c"># Google Play only</span><br>
+$ ipaShip --dir ./ --platform android<br><br>
+<span class="c"># Both stores</span><br>
+$ ipaShip --dir ./ --platform both
+    </div>
+    <table>
+      <thead><tr><th>Platform</th><th>Reads</th><th>Guidelines</th></tr></thead>
+      <tbody>
+        <tr><td><code>ios</code></td><td><code>Info.plist</code></td><td>Apple App Store Review Guidelines</td></tr>
+        <tr><td><code>android</code></td><td><code>AndroidManifest.xml</code></td><td>Google Play Developer Policies</td></tr>
+        <tr><td><code>both</code></td><td>Both files</td><td>Both guidelines</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="packages">Package Auditing</h2>
+    <p>ipaShip auto-detects Flutter packages/plugins from <code>flutter: plugin:</code> in <code>pubspec.yaml</code>. Package audits focus on:</p>
+    <ul>
+      <li>API surface &amp; documentation quality</li>
+      <li>Platform declarations (MethodChannel consistency)</li>
+      <li>Consumer permissions guidance</li>
+      <li>Dependency hygiene</li>
+      <li>Example app quality</li>
+    </ul>
+    <p>If the package has an <code>example/</code> directory, ipaShip scans it too.</p>
+    <div class="code-block">
+<span class="c"># Force package mode</span><br>
+$ ipaShip --dir ./my-plugin --type package
+    </div>
+
+    <h2 id="mcp-setup">MCP Server</h2>
+    <p>ipaShip includes a built-in <a href="https://modelcontextprotocol.io">Model Context Protocol</a> (MCP) server. AI coding assistants like Claude Code, Cursor, and Windsurf can run audits directly inside your editor.</p>
+
+    <h3>Setup</h3>
+
+    <h4>Step 1 — Install ipaShip globally</h4>
+    <p>The <code>ipaShip-mcp</code> binary is included with the package.</p>
+    <div class="code-block">$ npm install -g @async-atharv/ipaship</div>
+    <p>Verify both binaries are available:</p>
+    <div class="code-block">$ ipaShip --version<br>$ which ipaShip-mcp</div>
+
+    <h4>Step 2 — Add the MCP server</h4>
+    <p><strong>Option A: Claude Code CLI (recommended)</strong></p>
+    <p>Run a single command to register the MCP server:</p>
+    <div class="code-block">
+<span class="c"># Using Claude as the AI provider</span><br>
+$ claude mcp add ipaShip \<br>
+&nbsp;&nbsp;--transport stdio \<br>
+&nbsp;&nbsp;--env IPASHIP_PROVIDER=claude \<br>
+&nbsp;&nbsp;--env IPASHIP_MODEL=claude-haiku-4-5 \<br>
+&nbsp;&nbsp;--env ANTHROPIC_API_KEY=your-api-key \<br>
+&nbsp;&nbsp;-- ipaShip-mcp
+    </div>
+    <div class="code-block">
+<span class="c"># Using Gemini as the AI provider</span><br>
+$ claude mcp add ipaShip \<br>
+&nbsp;&nbsp;--transport stdio \<br>
+&nbsp;&nbsp;--env IPASHIP_PROVIDER=gemini \<br>
+&nbsp;&nbsp;--env IPASHIP_MODEL=gemini-2.5-flash \<br>
+&nbsp;&nbsp;--env GEMINI_API_KEY=your-api-key \<br>
+&nbsp;&nbsp;-- ipaShip-mcp
+    </div>
+
+    <p><strong>Option B: Manual JSON config</strong></p>
+    <p>Add to <code>~/.claude/.mcp.json</code>:</p>
+    <div class="code-block">
+{<br>
+&nbsp;&nbsp;"mcpServers": {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"ipaShip": {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"command": "ipaShip-mcp",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"env": {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"IPASHIP_PROVIDER": "claude",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"IPASHIP_MODEL": "claude-haiku-4-5",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"ANTHROPIC_API_KEY": "your-api-key"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;}<br>
+}
+    </div>
+
+    <h4>Cursor / Windsurf</h4>
+    <p>Add the same JSON config to your editor's MCP settings. The <code>command</code> and <code>env</code> fields are identical.</p>
+
+    <h4>Step 3 — Restart and verify</h4>
+    <p>Restart Claude Code (or run <code>/mcp</code> in chat) to pick up the new server. You should see <code>ipaShip</code> listed with its two tools.</p>
+
+    <h3>Environment Variables</h3>
+    <table>
+      <thead><tr><th>Variable</th><th>Description</th><th>Required</th></tr></thead>
+      <tbody>
+        <tr><td><code>IPASHIP_PROVIDER</code></td><td><code>claude</code> or <code>gemini</code></td><td>No (defaults to <code>gemini</code>)</td></tr>
+        <tr><td><code>IPASHIP_MODEL</code></td><td>Model override</td><td>No (uses provider default)</td></tr>
+        <tr><td><code>ANTHROPIC_API_KEY</code></td><td>API key for Claude</td><td>Yes, if provider is <code>claude</code></td></tr>
+        <tr><td><code>GEMINI_API_KEY</code></td><td>API key for Gemini</td><td>Yes, if provider is <code>gemini</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="mcp-tools">MCP Tools</h2>
+
+    <h3><code>ipaShip_store_audit</code></h3>
+    <p>Run a store compliance audit against Apple App Store and/or Google Play guidelines. Returns structured findings with PASS/WARNING/FAIL scores and specific guideline citations.</p>
+    <table>
+      <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>projectDir</code></td><td>string</td><td>Yes</td><td>Absolute path to the Flutter project root</td></tr>
+        <tr><td><code>platform</code></td><td><code>ios</code> | <code>android</code> | <code>both</code></td><td>No</td><td>Target platform. Auto-detected if omitted.</td></tr>
+      </tbody>
+    </table>
+
+    <h3><code>ipaShip_code_review</code></h3>
+    <p>Run a code quality and security review. Checks architecture, error handling, performance, dependencies, and security vulnerabilities.</p>
+    <table>
+      <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>projectDir</code></td><td>string</td><td>Yes</td><td>Absolute path to the Flutter project root</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Example Usage</h3>
+    <p>Once configured, ask your AI assistant:</p>
+    <div class="code-block">
+<span class="c"># Store audit</span><br>
+"Run a store audit on /path/to/my-flutter-app"<br><br>
+<span class="c"># Code review</span><br>
+"Review the code quality of this Flutter project"<br><br>
+<span class="c"># iOS only</span><br>
+"Audit my Flutter app for App Store compliance, iOS only"
+    </div>
+    <p>The assistant calls the appropriate ipaShip MCP tool and returns the results inline.</p>
+
+    <h2 id="ci">CI / CD Integration</h2>
+    <p>ipaShip exits with code <code>1</code> on FAIL and <code>0</code> on PASS/WARNING, making it easy to gate deployments.</p>
+    <h3>GitHub Actions</h3>
+    <div class="code-block">
+name: ipaShip Audit<br>
+on: [push]<br>
+jobs:<br>
+&nbsp;&nbsp;audit:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;runs-on: ubuntu-latest<br>
+&nbsp;&nbsp;&nbsp;&nbsp;steps:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- uses: actions/checkout@v4<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- uses: actions/setup-node@v4<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;node-version: 20<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- run: npx @async-atharv/ipaship --dir ./ --provider claude --key ${{ '{{' }} secrets.ANTHROPIC_API_KEY {{ '}}' }}
+    </div>
+
+    <h2 id="token-limits">Token Limits</h2>
+    <p>ipaShip estimates input token count before calling the AI and applies safety checks:</p>
+    <table>
+      <thead><tr><th>Provider</th><th>Context Window</th><th>Safe Input Limit</th></tr></thead>
+      <tbody>
+        <tr><td>Claude</td><td>200K tokens</td><td>~150K (50K reserved for output)</td></tr>
+        <tr><td>Gemini</td><td>1M tokens</td><td>~900K (100K reserved for output)</td></tr>
+      </tbody>
+    </table>
+    <p>At <strong>80%</strong> of the limit, you'll see a yellow warning. Above <strong>100%</strong>, ipaShip stops with an error and suggests narrowing scope:</p>
+    <div class="code-block">
+<span class="c"># Reduce tokens by targeting one platform</span><br>
+$ ipaShip --dir ./ --platform ios<br><br>
+<span class="c"># Or one mode</span><br>
+$ ipaShip --dir ./ --mode store
+    </div>
+
+
+
+  </main>
+</div>
+
+<!-- Footer -->
+<footer>
+  <div style="max-width:980px; margin:0 auto; padding:0 22px;">
+    <div class="links">
+      <a href="https://www.npmjs.com/package/@async-atharv/ipaship">npm</a>
+      <a href="https://github.com/async-atharv/ipaShip">GitHub</a>
+      <a href="index.html">Home</a>
+      <a href="app.html">Web App</a>
+    </div>
+    <p>ipaShip by async-atharv<br>PolyForm Noncommercial License 1.0.0</p>
+  </div>
+</footer>
+
+</body>
+</html>
