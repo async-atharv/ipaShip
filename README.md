@@ -42,22 +42,81 @@ curl -fsSL https://raw.githubusercontent.com/async-atharv/ipaShip/main/scripts/i
 docker run --rm -v $(pwd):/app -e GEMINI_API_KEY=xxx ipaship --dir /app
 ```
 
-**Other Languages (Wrappers)**
-Native wrappers for pip/Cargo/Go/Dart/Swift/NuGet let you invoke `ipaShip` in your pipeline environments without managing NPM. See the `wrappers/` directory:
+**Python (PyPI)**
+```bash
+pip install ./wrappers/python
+```
 
-- **Python (PyPI)**: `pip install ./wrappers/python`
-- **Go**: `cd wrappers/go && go install`
-- **Rust (Cargo)**: `cargo install --path ./wrappers/rust`
-- **Dart / Flutter**: Add `path: wrappers/dart` to your pubspec.
-- **Swift / Objective-C**: Include the `Package.swift` or CocoaPods `.podspec` from `wrappers/swift` or `wrappers/cocoapods`.
-- **C# / .NET**: `dotnet tool install --global --add-source ./wrappers/csharp ipaship`
-- **Java (Maven)**: `cd wrappers/java && mvn clean package && java -jar target/ipaship-1.3.0.jar`
-- **Kotlin (Gradle)**: `cd wrappers/kotlin && gradle build && java -jar build/libs/ipaship-1.3.0.jar`
-- **C**: `gcc -o ipaship wrappers/c/main.c && ./ipaship`
-- **C++**: `g++ -std=c++17 -o ipaship wrappers/cpp/main.cpp && ./ipaship`
-- **Ruby (RubyGems)**: `cd wrappers/ruby && gem build ipaship.gemspec && gem install ipaship-1.3.0.gem`
-- **Homebrew (macOS/Linux)**: `brew install --build-from-source ./wrappers/homebrew/ipaship.rb`
-- **PHP (Composer)**: Add `{ "type": "path", "url": "wrappers/php" }` to your composer repository.
+**Rust (Cargo)**
+```bash
+cargo install --path ./wrappers/rust
+```
+
+**Go**
+```bash
+cd wrappers/go && go install
+```
+
+**Dart / Flutter**
+Add this to your `pubspec.yaml`:
+```yaml
+dependencies:
+  ipaship:
+    path: wrappers/dart
+```
+
+**C# / .NET**
+```bash
+dotnet tool install --global --add-source ./wrappers/csharp ipaship
+```
+
+**macOS / Linux (Homebrew)**
+```bash
+brew install --build-from-source ./wrappers/homebrew/ipaship.rb
+```
+
+**Ruby (RubyGems)**
+```bash
+cd wrappers/ruby && gem build ipaship.gemspec && gem install ipaship-1.3.0.gem
+```
+
+**Java (Maven)**
+```bash
+cd wrappers/java && mvn clean package && java -jar target/ipaship-1.3.0.jar
+```
+
+**Kotlin (Gradle)**
+```bash
+cd wrappers/kotlin && gradle build && java -jar build/libs/ipaship-1.3.0.jar
+```
+
+**PHP (Composer)**
+Add to your `composer.json` repository:
+```json
+{
+  "repositories": [
+    {
+      "type": "path",
+      "url": "wrappers/php"
+    }
+  ],
+  "require": {
+    "async-atharv/ipaship": "*"
+  }
+}
+```
+
+**Swift / Objective-C**
+Include the `Package.swift` or CocoaPods `.podspec` from `wrappers/swift` or `wrappers/cocoapods`.
+
+**C & C++**
+```bash
+# C
+gcc -o ipaship wrappers/c/main.c && ./ipaship
+
+# C++
+g++ -std=c++17 -o ipaship wrappers/cpp/main.cpp && ./ipaship
+```
 
 ## How to Use ipaShip
 
