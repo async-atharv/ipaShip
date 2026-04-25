@@ -320,6 +320,7 @@
     .fade-up-d2 { animation-delay: 0.2s; }
     .fade-up-d3 { animation-delay: 0.3s; }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
 
@@ -352,7 +353,8 @@
       <div class="field">
         <label for="provider">Provider</label>
         <select id="provider">
-          <option value="gemini" selected>Google Gemini</option>
+          <option value="ipaship" selected>ipaShip (NVIDIA GLM-5.1)</option>
+          <option value="gemini">Google Gemini</option>
           <option value="claude">Anthropic Claude</option>
         </select>
       </div>
@@ -395,8 +397,8 @@
     <div class="drop-zone" id="dropZone">
       <input type="file" id="fileInput" webkitdirectory multiple>
       <div class="drop-icon">📂</div>
-      <h3>Drop your Flutter project here</h3>
-      <p>Or click to select a folder</p>
+      <h3>Drop your Flutter project or App Bundle here</h3>
+      <p>Select a folder, or drop a .ipa / .apk / .zip file</p>
       <div class="file-stats" id="fileStats"></div>
     </div>
   </div>
@@ -440,10 +442,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MODELS = {
+  ipaship: ['glm-4-9b-chat', 'meta/llama-3.1-405b-instruct', 'nv-mistral-nemo-12b-instruct'],
   gemini: ['gemini-2.5-flash','gemini-2.5-pro','gemini-2.5-flash-lite','gemini-1.5-pro','gemini-1.5-flash'],
   claude: ['claude-sonnet-4-6','claude-haiku-4-5','claude-sonnet-4-5','claude-sonnet-4','claude-sonnet-3-7','claude-haiku-3-5'],
 };
 
+const NVIDIA_URL = 'https://integrate.api.nvidia.com/v1/chat/completions';
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 
@@ -468,7 +472,56 @@ providerEl.addEventListener('change', populateModels);
 populateModels();
 
 // ── File Handling ──
+async function processZipFile(file) {
+  dropZone.classList.add('has-files');
+  fileStats.textContent = 'Extracting archive...';
+  try {
+    const zip = await JSZip.loadAsync(file);
+    const files = [];
+    zip.forEach((relativePath, zipEntry) => {
+      if (!zipEntry.dir) {
+        files.push(zipEntry);
+      }
+    });
+
+    projectFiles = {}; pubspecContent = null; plistContent = null; manifestContent = null;
+    let relevantCount = 0;
+    const pending = [];
+
+    for (const zipEntry of files) {
+      const path = zipEntry.name;
+      const lower = path.toLowerCase();
+      
+      const isSrc = lower.endsWith('.dart') || lower.endsWith('.swift') || lower.endsWith('.m') || lower.endsWith('.java') || lower.endsWith('.kt') || lower.endsWith('.smali');
+      if (isSrc && !lower.includes('.g.dart') && !lower.includes('.freezed.dart') && !lower.includes('/generated/')) {
+        relevantCount++;
+        pending.push(zipEntry.async('string').then(txt => { projectFiles[path] = txt; }));
+      }
+      if (lower.endsWith('pubspec.yaml')) pending.push(zipEntry.async('string').then(txt => { pubspecContent = txt; }));
+      if (path.includes('Info.plist')) pending.push(zipEntry.async('string').then(txt => { plistContent = txt; }));
+      if (path.includes('AndroidManifest.xml')) pending.push(zipEntry.async('string').then(txt => { manifestContent = txt; }));
+    }
+
+    await Promise.all(pending);
+    if (relevantCount > 0) {
+      fileStats.textContent = `Extracted ${relevantCount} source files · pubspec ${pubspecContent ? '✓' : '—'} · plist ${plistContent ? '✓' : '—'} · manifest ${manifestContent ? '✓' : '—'}`;
+      checkReady();
+    } else {
+      fileStats.textContent = 'No relevant source files found inside the archive.';
+      dropZone.classList.remove('has-files');
+      runBtn.disabled = true;
+    }
+  } catch (err) {
+    fileStats.textContent = 'Error extracting archive: ' + err.message;
+    dropZone.classList.remove('has-files');
+  }
+}
+
 function handleFiles(fileList) {
+  if (fileList.length === 1 && (fileList[0].name.toLowerCase().endsWith('.ipa') || fileList[0].name.toLowerCase().endsWith('.apk') || fileList[0].name.toLowerCase().endsWith('.zip'))) {
+    return processZipFile(fileList[0]);
+  }
+
   projectFiles = {}; pubspecContent = null; plistContent = null; manifestContent = null;
   let dartCount = 0;
   const pending = [];
@@ -596,6 +649,18 @@ async function callClaude(userMsg, sysPrompt, key, model) {
   return { text, tokens: { input: u.input_tokens, output: u.output_tokens, total: (u.input_tokens||0)+(u.output_tokens||0) } };
 }
 
+async function callIpaship(userMsg, sysPrompt, key, model) {
+  const res = await fetch(NVIDIA_URL, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+    body: JSON.stringify({ model: model, max_tokens: 4096, messages: [{ role: 'system', content: sysPrompt }, { role: 'user', content: userMsg }], temperature: 0.2 }),
+  });
+  if (!res.ok) { const b = await res.text(); throw new Error(res.status === 401 ? 'Invalid API key.' : `ipaship error (${res.status}): ${b.slice(0,300)}`); }
+  const d = await res.json(); const text = d.choices?.[0]?.message?.content;
+  if (!text) throw new Error('ipaship returned an empty response.');
+  const u = d.usage || {};
+  return { text, tokens: { input: u.prompt_tokens, output: u.completion_tokens, total: u.total_tokens } };
+}
+
 // ── Progress ──
 function setProgress(pct, msg) { progressFill.style.width = pct+'%'; progressStatus.textContent = msg; }
 function showError(msg) { errorBox.textContent = msg; errorBox.classList.add('visible'); }
@@ -664,7 +729,12 @@ runBtn.addEventListener('click', async () => {
     const limit = provider==='claude'?150000:900000;
     if (est > limit) throw new Error(`Input (~${est.toLocaleString()} tokens) exceeds ${provider} limit.`);
     setProgress(40, `Sending to ${model}…`);
-    const resp = provider==='claude' ? await callClaude(usr,sys,key,model) : await callGemini(usr,sys,key,model);
+    
+    let resp;
+    if (provider === 'claude') resp = await callClaude(usr,sys,key,model);
+    else if (provider === 'ipaship') resp = await callIpaship(usr,sys,key,model);
+    else resp = await callGemini(usr,sys,key,model);
+    
     setProgress(85, 'Parsing…');
     const cleaned = resp.text.replace(/^```(?:json)?\s*\n?/i,'').replace(/\n?```\s*$/i,'').trim();
     let result; try { result = JSON.parse(cleaned); } catch { throw new Error('Failed to parse AI response as JSON.'); }

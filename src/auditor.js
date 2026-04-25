@@ -7,6 +7,7 @@
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
+const NVIDIA_API_URL = 'https://integrate.api.nvidia.com/v1/chat/completions';
 
 // ── Response format (shared across all prompts) ──
 
@@ -473,6 +474,53 @@ async function callClaude(userMessage, { apiKey, model, systemPrompt }) {
   };
 }
 
+async function callIpaship(userMessage, { apiKey, model, systemPrompt }) {
+  const body = {
+    model: model || 'meta/llama-3.1-405b-instruct',
+    max_tokens: 4096,
+    temperature: 0.2,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage }
+    ],
+  };
+
+  const res = await fetch(NVIDIA_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    if (res.status === 401) {
+      throw new Error('Invalid API key. Check your NVIDIA API key and try again.');
+    }
+    throw new Error(`NVIDIA API error (${res.status}): ${errBody}`);
+  }
+
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content;
+
+  if (!text) {
+    throw new Error('NVIDIA API returned an empty response.');
+  }
+
+  const usage = data.usage || {};
+  return {
+    text,
+    tokens: {
+      input: usage.prompt_tokens || null,
+      output: usage.completion_tokens || null,
+      total: usage.total_tokens || null,
+    },
+  };
+}
+
+
 // ── Main audit function ──
 
 function estimateTokens(text) {
@@ -512,9 +560,14 @@ export async function audit(evidence, { apiKey, model, provider, mode, platform 
     );
   }
 
-  const response = provider === 'claude'
-    ? await callClaude(userMessage, { apiKey, model, systemPrompt })
-    : await callGemini(userMessage, { apiKey, model, systemPrompt });
+  let response;
+  if (provider === 'claude') {
+    response = await callClaude(userMessage, { apiKey, model, systemPrompt });
+  } else if (provider === 'ipaship') {
+    response = await callIpaship(userMessage, { apiKey, model, systemPrompt });
+  } else {
+    response = await callGemini(userMessage, { apiKey, model, systemPrompt });
+  }
 
   const cleaned = response.text.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
 

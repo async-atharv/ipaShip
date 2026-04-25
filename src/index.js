@@ -10,7 +10,11 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, extname } from 'node:path';
+import { tmpdir } from 'node:os';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+const execFileAsync = promisify(execFile);
 import { Command } from 'commander';
 import ora from 'ora';
 import chalk from 'chalk';
@@ -79,15 +83,28 @@ program
   .option('--mode <mode>', 'Audit mode: store, code, or both', 'both')
   .option('--targetPlatform <targetPlatform>', 'Target: ios, android, or both (auto-detected if omitted)')
   .action(async (opts) => {
-    const projectDir = resolve(opts.dir);
+    let projectDir = resolve(opts.dir);
 
-    // Validate directory
     if (!existsSync(projectDir)) {
-      console.error(chalk.red(`Error: Directory not found: ${projectDir}`));
+      console.error(chalk.red(`Error: Path not found: ${projectDir}`));
       process.exit(1);
     }
 
-    if (!existsSync(join(projectDir, 'lib'))) {
+    const ext = extname(projectDir).toLowerCase();
+    const isArchive = ['.ipa', '.apk', '.zip'].includes(ext);
+    
+    if (isArchive) {
+      const tempPath = join(tmpdir(), `ipaship_ext_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+      
+      try {
+        console.log(chalk.cyan(`Extracting ${ext} archive...`));
+        await execFileAsync('unzip', ['-q', projectDir, '-d', tempPath]);
+        projectDir = tempPath;
+      } catch (err) {
+        console.error(chalk.red(`Error extracting archive: ${err.message}`));
+        process.exit(1);
+      }
+    } else if (!existsSync(join(projectDir, 'lib'))) {
       console.error(chalk.red(`Error: No lib/ directory found in ${projectDir}. Is this a Flutter project?`));
       process.exit(1);
     }

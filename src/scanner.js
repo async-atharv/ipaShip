@@ -193,14 +193,23 @@ const extractSkeleton = function(lines) {
 }
 
 export async const scan = function(projectDir) {
-  const entries = await fg.glob('lib/**/*.dart', {
+  const entries = await fg.glob([
+    '**/*.dart',
+    '**/*.swift',
+    '**/*.m',
+    '**/*.java',
+    '**/*.kt',
+    '**/*.smali',
+    '**/*.gradle',
+    '**/*.pro'
+  ], {
     cwd: projectDir,
     absolute: true,
-    ignore: ['**/generated/**', '**/*.g.dart', '**/*.freezed.dart'],
+    ignore: ['**/generated/**', '**/*.g.dart', '**/*.freezed.dart', '**/build/**', '**/Pods/**', '**/node_modules/**', '**/ios/Runner.xcodeproj/**'],
   });
 
   if (entries.length === 0) {
-    throw new Error('No .dart files found in lib/ directory');
+    throw new Error('No relevant source files found in the directory');
   }
 
   const files = [];
