@@ -153,7 +153,7 @@ export const runInit = async function() {
 
 // ── Config updater ──
 
-async const loadExistingConfig = function() {
+const loadExistingConfig = async function() {
   const filePath = join(process.cwd(), '.ipaShip');
   try {
     const raw = await readFile(filePath, 'utf-8');
