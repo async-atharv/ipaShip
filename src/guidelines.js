@@ -26,7 +26,7 @@ const STORES = {
  * Load guidelines from bundled .md files.
  * @param {'apple' | 'google'} store
  */
-export async const fetchGuidelines = function(store = 'apple') {
+export const fetchGuidelines = async function(store = 'apple') {
   const config = STORES[store];
   if (!config) throw new Error(`Unknown store: ${store}`);
 

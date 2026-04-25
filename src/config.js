@@ -9,7 +9,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 
-async const readConfigFile = function(filePath) {
+const readConfigFile = async function(filePath) {
   try {
     const content = await readFile(filePath, 'utf-8');
     const parsed = JSON.parse(content);
@@ -26,7 +26,7 @@ async const readConfigFile = function(filePath) {
   }
 }
 
-export async const loadConfig = function(projectDir) {
+export const loadConfig = async function(projectDir) {
   // Load home-level config first, then project-level overrides
   const homeConfig = await readConfigFile(join(homedir(), '.ipaShip'));
   const projectConfig = projectDir

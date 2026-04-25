@@ -192,7 +192,7 @@ const extractSkeleton = function(lines) {
   return result;
 }
 
-export async const scan = function(projectDir) {
+export const scan = async function(projectDir) {
   const entries = await fg.glob([
     '**/*.dart',
     '**/*.swift',

@@ -9,7 +9,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import plist from 'plist';
 
-export async const read = function(projectDir) {
+export const read = async function(projectDir) {
   const plistPath = path.join(projectDir, 'ios', 'Runner', 'Info.plist');
 
   try {

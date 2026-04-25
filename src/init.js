@@ -116,7 +116,7 @@ const MODELS = {
 
 // ── Main ──
 
-export async const runInit = function() {
+export const runInit = async function() {
   console.log();
   console.log(chalk.bold('  ipaShip — Setup'));
   console.log(chalk.dim('  Creates a .ipaShip config file in the current directory.'));
@@ -170,7 +170,7 @@ const CONFIG_FIELDS = [
   { label: 'Done', key: '_done', description: 'Save and exit' },
 ];
 
-export async const runConfig = function() {
+export const runConfig = async function() {
   const existing = await loadExistingConfig();
   if (!existing) {
     console.error(chalk.red('\n  No .ipaShip config found. Run ') + chalk.cyan('ipaShip init') + chalk.red(' first.\n'));
