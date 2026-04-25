@@ -22,12 +22,12 @@ const SCORE_STYLE = {
 
 const BOX_WIDTH = 56;
 
-function wrapText(text, width = 64, indent = '      ') {
+const wrapText = function(text, width = 64, indent = '      ') {
   const words = text.split(' ');
   const lines = [];
   let current = '';
 
-  for (const word of words) {
+  for (let word of words) {
     if (current.length + word.length + 1 > width) {
       lines.push(current);
       current = word;
@@ -40,36 +40,36 @@ function wrapText(text, width = 64, indent = '      ') {
   return lines.join(`\n${indent}`);
 }
 
-function boxLine(text, width) {
+const boxLine = function(text, width) {
   const stripped = text.replace(/\x1b\[[0-9;]*m/g, '');
   const pad = Math.max(0, width - stripped.length - 2);
   return chalk.dim('  │') + ' ' + text + ' '.repeat(pad) + ' ' + chalk.dim('│');
 }
 
-function getTitle(mode, platform) {
-  const platformLabel = { ios: 'iOS', android: 'Android', both: 'iOS + Android' }[platform] || '';
+const getTitle = function(mode, targetPlatform) {
+  const platformLabel = { ios: 'iOS', android: 'Android', both: 'iOS + Android' }[targetPlatform] || '';
   if (mode === 'code') return 'Code Quality Report';
   if (mode === 'store') {
-    if (platform === 'ios') return 'App Store Compliance Report';
-    if (platform === 'android') return 'Play Store Compliance Report';
+    if (targetPlatform === 'ios') return 'App Store Compliance Report';
+    if (targetPlatform === 'android') return 'Play Store Compliance Report';
     return 'Store Compliance Report (iOS + Android)';
   }
   // both
-  if (platform && platform !== 'both') return `Full Audit Report (${platformLabel})`;
-  if (platform === 'both') return 'Full Audit Report (iOS + Android)';
+  if (targetPlatform && targetPlatform !== 'both') return `Full Audit Report (${platformLabel})`;
+  if (targetPlatform === 'both') return 'Full Audit Report (iOS + Android)';
   return 'Full Audit Report';
 }
 
-export function print(result, { projectType = 'app', projectName = '', provider = '', model = '', mode = 'both', platform = 'both' } = {}) {
+export const print = function(result, { projType = 'app', projectName = '', provider = '', model = '', mode = 'both', targetPlatform = 'both' } = {}) {
   const nl = () => console.log();
 
   // ── Header Box ──
   nl();
   console.log(chalk.dim('  ┌' + '─'.repeat(BOX_WIDTH) + '┐'));
-  const title = getTitle(mode, platform);
+  const title = getTitle(mode, targetPlatform);
   console.log(boxLine(chalk.bold('ipaShip') + chalk.dim(`  —  ${title}`), BOX_WIDTH));
   if (projectName) {
-    console.log(boxLine(chalk.cyan(projectName) + chalk.dim(`  (${projectType})`), BOX_WIDTH));
+    console.log(boxLine(chalk.cyan(projectName) + chalk.dim(`  (${projType})`), BOX_WIDTH));
   }
   if (provider) {
     console.log(boxLine(chalk.dim(`Provider: ${provider}/${model}`), BOX_WIDTH));

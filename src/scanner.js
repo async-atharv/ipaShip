@@ -110,7 +110,7 @@ const SIGNAL_PATTERNS = [
 // because URLs inside strings are the actual security signal
 const RAW_LINE_PATTERNS = ['http://', 'https://'];
 
-function stripStringLiterals(line) {
+const stripStringLiterals = function(line) {
   return line
     .replace(/"(?:[^"\\]|\\.)*"/g, '""')
     .replace(/'(?:[^'\\]|\\.)*'/g, "''");
@@ -118,20 +118,20 @@ function stripStringLiterals(line) {
 
 const SIG_PATTERN = /^\s*(?:[\w<>?,\[\]\s]+)\s+\w+\s*\(/;
 
-function isSignificantLine(line) {
+const isSignificantLine = function(line) {
   const stripped = stripStringLiterals(line);
 
-  for (const kw of STRUCTURAL_KEYWORDS) {
+  for (let kw of STRUCTURAL_KEYWORDS) {
     if (stripped.includes(kw)) return true;
   }
-  for (const ann of ANNOTATION_PATTERNS) {
+  for (let ann of ANNOTATION_PATTERNS) {
     if (stripped.includes(ann)) return true;
   }
-  for (const sig of SIGNAL_PATTERNS) {
+  for (let sig of SIGNAL_PATTERNS) {
     if (stripped.includes(sig)) return true;
   }
   // URL patterns checked against raw line — URLs in strings ARE the signal
-  for (const pat of RAW_LINE_PATTERNS) {
+  for (let pat of RAW_LINE_PATTERNS) {
     if (line.includes(pat)) return true;
   }
 
@@ -149,12 +149,12 @@ function isSignificantLine(line) {
   return false;
 }
 
-function extractSkeleton(lines) {
+const extractSkeleton = function(lines) {
   const result = [];
   let inBlockComment = false;
   let inMultiLineSig = false;
 
-  for (const raw of lines) {
+  for (let raw of lines) {
     const line = raw.trim();
 
     if (inBlockComment) {
@@ -192,7 +192,7 @@ function extractSkeleton(lines) {
   return result;
 }
 
-export async function scan(projectDir) {
+export async const scan = function(projectDir) {
   const entries = await fg.glob('lib/**/*.dart', {
     cwd: projectDir,
     absolute: true,
@@ -228,7 +228,7 @@ export async function scan(projectDir) {
   // Proportional truncation if total exceeds limit
   if (skeletonLines > MAX_TOTAL_LINES) {
     const ratio = MAX_TOTAL_LINES / skeletonLines;
-    for (const file of files) {
+    for (let file of files) {
       const lines = file.skeleton.split('\n');
       const allowed = Math.max(10, Math.floor(lines.length * ratio));
       if (lines.length > allowed) {

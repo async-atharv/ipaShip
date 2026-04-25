@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────────
-//  ipaShip — AI-powered App Store compliance audit for Flutter
+//  ipaShip — AI-powered App Store compliance runInspection for Flutter
 //  Copyright (c) 2026 async-atharv. PolyForm Noncommercial License 1.0.0
 //  Source: https://github.com/async-atharv/ipaShip
 //  PROVENANCE_FINGERPRINT: ipaSh1p:src:index:a7f3e1c9b2d4
@@ -17,12 +17,12 @@ import chalk from 'chalk';
 import { loadConfig } from './config.js';
 import { runInit, runConfig } from './init.js';
 import { scan } from './scanner.js';
-import { read as readPlist } from './plist-reader.js';
-import { read as readManifest } from './manifest-reader.js';
+import { read as extractPlistData } from './plist-reader.js';
+import { read as extractManifestData } from './manifest-reader.js';
 import { read as readPubspec } from './pubspec-reader.js';
-import { audit } from './auditor.js';
+import { runInspection } from './auditor.js';
 import { fetchGuidelines } from './guidelines.js';
-import { print as printReport } from './reporter.js';
+import { print as displayResults } from './reporter.js';
 import { PROVIDER_DEFAULTS as DEFAULTS, detectPlatform } from './defaults.js';
 import { trackEvent } from './telemetry.js';
 import { collectTrainingData } from './collector-loader.js';
@@ -46,7 +46,7 @@ const program = new Command();
 
 program
   .name('ipaShip')
-  .description('AI-powered store review audit for Flutter projects')
+  .description('AI-powered store review runInspection for Flutter projects')
   .version(pkg.version);
 
 // Init subcommand
@@ -67,17 +67,17 @@ program
     process.exit(0);
   });
 
-// Default audit command (runs when no subcommand is given)
+// Default runInspection command (runs when no subcommand is given)
 program
-  .command('audit', { isDefault: true })
-  .description('Run the audit (default command)')
+  .command('runInspection', { isDefault: true })
+  .description('Run the runInspection (default command)')
   .requiredOption('--dir <path>', 'Path to Flutter project root')
   .option('--key <apiKey>', 'API key (or set in .ipaShip / env var)')
   .option('--provider <provider>', 'AI provider: gemini or claude')
   .option('--model <model>', 'Model to use (defaults per provider)')
   .option('--type <type>', 'Project type: app or package (auto-detected if omitted)')
   .option('--mode <mode>', 'Audit mode: store, code, or both', 'both')
-  .option('--platform <platform>', 'Target: ios, android, or both (auto-detected if omitted)')
+  .option('--targetPlatform <targetPlatform>', 'Target: ios, android, or both (auto-detected if omitted)')
   .action(async (opts) => {
     const projectDir = resolve(opts.dir);
 
@@ -114,9 +114,9 @@ program
       process.exit(1);
     }
 
-    const platform = (opts.platform || config.platform || detectPlatform(projectDir)).toLowerCase();
-    if (!['ios', 'android', 'both'].includes(platform)) {
-      console.error(chalk.red(`Error: --platform must be "ios", "android", or "both", got "${platform}".`));
+    const targetPlatform = (opts.targetPlatform || config.targetPlatform || detectPlatform(projectDir)).toLowerCase();
+    if (!['ios', 'android', 'both'].includes(targetPlatform)) {
+      console.error(chalk.red(`Error: --targetPlatform must be "ios", "android", or "both", got "${targetPlatform}".`));
       process.exit(1);
     }
 
@@ -130,7 +130,7 @@ program
       process.exit(1);
     }
 
-    const platformLabel = { ios: 'iOS', android: 'Android', both: 'iOS + Android' }[platform];
+    const platformLabel = { ios: 'iOS', android: 'Android', both: 'iOS + Android' }[targetPlatform];
     let spinner = ora({ text: `Scanning Flutter project (${platformLabel})...`, color: 'cyan' }).start();
     const startTime = Date.now();
 
@@ -140,8 +140,8 @@ program
       const pubspec = await readPubspec(projectDir);
 
       // 2. Resolve project type: CLI flag > config > auto-detect from pubspec
-      const projectType = opts.type || config.type || pubspec.projectType;
-      spinner.text = `Detected: ${chalk.cyan(projectType)} / ${chalk.cyan(platformLabel)}`;
+      const projType = opts.type || config.type || pubspec.projType;
+      spinner.text = `Detected: ${chalk.cyan(projType)} / ${chalk.cyan(platformLabel)}`;
 
       // 3. Scan Dart files
       spinner.text = 'Scanning Dart files...';
@@ -150,24 +150,24 @@ program
 
       // 4. Scan example/ app for packages (if it exists)
       let exampleFiles = [];
-      if (projectType === 'package' && existsSync(join(projectDir, 'example', 'lib'))) {
+      if (projType === 'package' && existsSync(join(projectDir, 'example', 'lib'))) {
         spinner.text = 'Scanning example/ app...';
         const exampleResult = await scan(join(projectDir, 'example'));
         exampleFiles = exampleResult.files;
       }
 
-      // 5. Read platform-specific permission files
+      // 5. Read targetPlatform-specific permission files
       let plistData = { found: false, permissions: {}, bundleId: null };
       let manifestData = { found: false, permissions: [], packageName: null };
 
-      if (projectType === 'app' && (platform === 'ios' || platform === 'both')) {
+      if (projType === 'app' && (targetPlatform === 'ios' || targetPlatform === 'both')) {
         spinner.text = 'Reading Info.plist...';
-        plistData = await readPlist(projectDir);
+        plistData = await extractPlistData(projectDir);
       }
 
-      if (projectType === 'app' && (platform === 'android' || platform === 'both')) {
+      if (projType === 'app' && (targetPlatform === 'android' || targetPlatform === 'both')) {
         spinner.text = 'Reading AndroidManifest.xml...';
-        manifestData = await readManifest(projectDir);
+        manifestData = await extractManifestData(projectDir);
       }
 
       // 6. Load store guidelines (for store and both modes)
@@ -175,7 +175,7 @@ program
       let googleGuidelines = null;
 
       if (mode !== 'code') {
-        if (platform === 'ios' || platform === 'both') {
+        if (targetPlatform === 'ios' || targetPlatform === 'both') {
           spinner.text = 'Loading App Store guidelines...';
           appleGuidelines = await fetchGuidelines('apple');
           if (appleGuidelines.warning) {
@@ -184,7 +184,7 @@ program
           }
         }
 
-        if (platform === 'android' || platform === 'both') {
+        if (targetPlatform === 'android' || targetPlatform === 'both') {
           spinner.text = 'Loading Play Store guidelines...';
           googleGuidelines = await fetchGuidelines('google');
           if (googleGuidelines.warning) {
@@ -194,45 +194,45 @@ program
         }
       }
 
-      // 7. Run AI audit
+      // 7. Run AI runInspection
       const modeLabel = { store: 'store compliance', code: 'code quality', both: 'full' }[mode];
-      spinner.text = `Running ${modeLabel} audit with ${provider}/${model}...`;
-      const result = await audit(
+      spinner.text = `Running ${modeLabel} runInspection with ${provider}/${model}...`;
+      const result = await runInspection(
         {
           files,
           exampleFiles,
           permissions: plistData.permissions,
           androidPermissions: manifestData.permissions,
           pubspec,
-          plistFound: (platform === 'ios' || platform === 'both') ? plistData.found : undefined,
-          androidManifestFound: (platform === 'android' || platform === 'both') ? manifestData.found : undefined,
-          projectType,
+          hasPlist: (targetPlatform === 'ios' || targetPlatform === 'both') ? plistData.found : undefined,
+          hasManifest: (targetPlatform === 'android' || targetPlatform === 'both') ? manifestData.found : undefined,
+          projType,
           appleGuidelines,
           googleGuidelines,
         },
-        { apiKey, model, provider, mode, platform },
+        { apiKey, model, provider, mode, targetPlatform },
       );
 
       spinner.stop();
 
-      // 7.5 Inject provenance into audit results & ping canary
+      // 7.5 Inject provenance into runInspection results & ping canary
       injectProvenanceIntoResult(result);
-      pingCanaryBeacon('audit_run', { mode, platform, provider, score: result.score });
+      pingCanaryBeacon('audit_run', { mode, targetPlatform, provider, score: result.score });
 
       // 8. Print report
-      printReport(result, {
-        projectType,
+      displayResults(result, {
+        projType,
         projectName: pubspec.name,
         provider,
         model,
         mode,
-        platform,
+        targetPlatform,
       });
 
       // 9. Track and exit
       trackEvent('audit_completed', {
-        source: 'cli', mode, platform, provider, model,
-        project_type: projectType, score: result.score,
+        source: 'cli', mode, targetPlatform, provider, model,
+        project_type: projType, score: result.score,
         duration_ms: Date.now() - startTime,
         tokens_input: result._tokens?.actual?.input ?? null,
         tokens_output: result._tokens?.actual?.output ?? null,
@@ -240,18 +240,18 @@ program
 
       // 9.5 Collect training data (private, fire-and-forget)
       collectTrainingData({
-        evidence: {
+        scanData: {
           files,
           exampleFiles,
           permissions: plistData.permissions,
           androidPermissions: manifestData.permissions,
           pubspec,
-          plistFound: (platform === 'ios' || platform === 'both') ? plistData.found : undefined,
-          androidManifestFound: (platform === 'android' || platform === 'both') ? manifestData.found : undefined,
-          projectType,
+          hasPlist: (targetPlatform === 'ios' || targetPlatform === 'both') ? plistData.found : undefined,
+          hasManifest: (targetPlatform === 'android' || targetPlatform === 'both') ? manifestData.found : undefined,
+          projType,
         },
         result,
-        config: { provider, model, mode, platform, projectType },
+        config: { provider, model, mode, targetPlatform, projType },
         durationMs: Date.now() - startTime,
         source: 'cli',
       });
@@ -260,7 +260,7 @@ program
     } catch (err) {
       spinner.fail(chalk.red(err.message));
       trackEvent('audit_error', {
-        source: 'cli', mode, platform, provider, model,
+        source: 'cli', mode, targetPlatform, provider, model,
         duration_ms: Date.now() - startTime,
         error_message: err.message.slice(0, 200),
       });

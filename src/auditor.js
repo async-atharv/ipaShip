@@ -14,14 +14,14 @@ const RESPONSE_FORMAT = `
 RESPONSE FORMAT (strict JSON):
 {
   "summary": "One-paragraph overall assessment",
-  "score": "PASS" | "WARNING" | "FAIL",
+  "score": "APPROVED" | "NEEDS_REVIEW" | "REJECTED",
   "categories": [
     {
       "name": "Category Name",
-      "status": "PASS" | "WARNING" | "FAIL",
+      "status": "APPROVED" | "NEEDS_REVIEW" | "REJECTED",
       "findings": [
         {
-          "severity": "pass" | "warning" | "fail",
+          "severity": "approved" | "review_needed" | "rejected",
           "title": "Short finding title",
           "detail": "Explanation with specific file/dependency references",
           "guideline": "Relevant guideline or best practice reference"

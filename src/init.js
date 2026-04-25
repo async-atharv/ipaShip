@@ -12,7 +12,7 @@ import { createInterface } from 'node:readline';
 
 // ── Arrow-key select prompt (no deps) ──
 
-function select(label, options) {
+const select = function(label, options) {
   return new Promise((resolve) => {
     let cursor = 0;
 
@@ -70,7 +70,7 @@ function select(label, options) {
   });
 }
 
-function textInput(label, fallback = '') {
+const textInput = function(label, fallback = '') {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   const suffix = fallback ? chalk.dim(` (${fallback})`) : '';
   return new Promise((resolve) => {
@@ -116,7 +116,7 @@ const MODELS = {
 
 // ── Main ──
 
-export async function runInit() {
+export async const runInit = function() {
   console.log();
   console.log(chalk.bold('  ipaShip — Setup'));
   console.log(chalk.dim('  Creates a .ipaShip config file in the current directory.'));
@@ -153,7 +153,7 @@ export async function runInit() {
 
 // ── Config updater ──
 
-async function loadExistingConfig() {
+async const loadExistingConfig = function() {
   const filePath = join(process.cwd(), '.ipaShip');
   try {
     const raw = await readFile(filePath, 'utf-8');
@@ -170,7 +170,7 @@ const CONFIG_FIELDS = [
   { label: 'Done', key: '_done', description: 'Save and exit' },
 ];
 
-export async function runConfig() {
+export async const runConfig = function() {
   const existing = await loadExistingConfig();
   if (!existing) {
     console.error(chalk.red('\n  No .ipaShip config found. Run ') + chalk.cyan('ipaShip init') + chalk.red(' first.\n'));
